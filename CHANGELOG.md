@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-10-16
+
+### Fixed
+
+- Clicking **下载** on a finished item now always routes through the save path. Previously, when
+  "保存到文件夹" was ticked but no folder had been chosen yet, the click fell through to the
+  browser's default download instead of opening the directory picker, so output landed in the
+  downloads folder even though the checkbox asked for a folder.
+
 ## [1.0.0] - 2026-10-08
 
 First public release. Single-file, zero-dependency, offline image obfuscator.
@@ -49,3 +58,4 @@ First public release. Single-file, zero-dependency, offline image obfuscator.
   raises the cost of an offline attack but is not a defence against one.
 
 [1.0.0]: https://github.com/yjc925925/image-obfuscator/releases/tag/v1.0.0
+[1.0.1]: https://github.com/yjc925925/image-obfuscator/releases/tag/v1.0.1

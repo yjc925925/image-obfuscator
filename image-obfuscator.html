@@ -900,7 +900,7 @@ var ZipWriter = (function () {
       var a = document.createElement('a');
       a.className = 'dl'; a.textContent = '下载'; a.download = it.outName;
       a.href = URL.createObjectURL(it.blob);
-      a.onclick = function (ev) { if (wantDir()) { ev.preventDefault(); save(it.blob, it.outName); } };
+      a.onclick = function (ev) { ev.preventDefault(); if (wantDir()) save(it.blob, it.outName); else download(it.blob, it.outName); };
       var row = document.getElementById('r' + it.id);
       if (row) {
         var old = row.querySelector('a.dl');
