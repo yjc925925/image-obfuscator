@@ -11,3 +11,5 @@ Desktop.ini
 # Local scratch
 node_modules/
 *.tmp
+dist/
+test/tmp/

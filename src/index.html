@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f1216">
+<title>图片混淆器</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--bg:#0f1216;--card:#171c22;--card2:#1e242c;--line:#2a333d;--fg:#e9eef4;--dim:#8b98a6;--acc:#4da3ff;--ok:#37c98b;--bad:#ff5f6d;--warn:#ffb454}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+     min-height:100vh;display:flex;flex-direction:column;-webkit-text-size-adjust:100%;overflow-wrap:break-word}
+header{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line);
+       padding:calc(10px + env(safe-area-inset-top)) 14px 10px;display:flex;align-items:center;gap:10px}
+h1{margin:0;font-size:17px;font-weight:600;flex:1}
+main{flex:1;padding:12px 12px 8px;max-width:900px;width:100%;margin:0 auto}
+.tabs{display:flex;margin-bottom:10px;border:1px solid var(--line)}
+.tabs button{flex:1;border:0;background:var(--card);color:var(--dim);font:600 15px/1 inherit;padding:13px 8px;cursor:pointer;font-family:inherit}
+.tabs button+button{border-left:1px solid var(--line)}
+.tabs button.on{background:var(--card2);color:var(--fg);box-shadow:inset 0 -2px 0 var(--acc)}
+.card{background:var(--card);border:1px solid var(--line);padding:12px;margin-bottom:10px}
+label.lbl{display:block;font-size:12px;color:var(--dim);margin-bottom:6px}
+.pwrow{display:flex;gap:8px;align-items:center}
+input[type=password],input[type=text],select{min-width:0;background:var(--card2);border:1px solid var(--line);color:var(--fg);
+      padding:11px 12px;font:15px/1.2 inherit}
+input[type=password],input[type=text]{flex:1}
+select{width:100%;-webkit-appearance:none;appearance:none}
+input:focus,select:focus{outline:0;border-color:var(--acc)}
+.iconbtn{background:var(--card2);border:1px solid var(--line);color:var(--dim);padding:11px 12px;font-size:15px;cursor:pointer;font-family:inherit}
+.hint{font-size:12px;color:var(--dim);margin-top:7px}
+.drop{border:1px solid var(--line);padding:26px 14px;text-align:center;background:var(--card);cursor:pointer;margin-bottom:10px}
+.drop:hover,.drop.over{border-color:var(--acc);background:#12202e}
+.drop .big{font-size:16px;font-weight:600}
+.drop .sub{font-size:12.5px;color:var(--dim);margin-top:6px}
+.drop .sub u{color:var(--acc);text-decoration:underline;cursor:pointer}
+.grid{display:flex;gap:8px;margin-bottom:10px}
+.grid .card{margin:0;flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;font-size:13px}
+.grid input[type=checkbox]{width:18px;height:18px;accent-color:var(--acc);flex:none}
+ul#list{list-style:none;margin:0 0 10px;padding:0}
+li.row{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);padding:10px 12px;margin-bottom:7px}
+li.row .info{flex:1;min-width:0}
+li.row .nm{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+li.row .mt{font-size:11.5px;color:var(--dim);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip{font-size:11.5px;padding:3px 8px;flex:none;border:1px solid var(--line);color:var(--dim);white-space:nowrap}
+.chip.work{color:var(--warn);border-color:#5a4520;background:#241d0e}
+.chip.done{color:var(--ok);border-color:#1d5340;background:#0f241c}
+.chip.fail{color:var(--bad);border-color:#5c2027;background:#241114}
+.dl{order:4;flex:none;background:var(--card2);border:1px solid var(--line);color:var(--acc);padding:6px 10px;font-size:12.5px;cursor:pointer;text-decoration:none;font-family:inherit}
+li.row .del{order:5;flex:none;background:transparent;border:1px solid var(--line);color:var(--dim);padding:6px 10px;font-size:12.5px;cursor:pointer;font-family:inherit}
+li.row .del:hover{color:var(--bad);border-color:#5c2027;background:#241114}
+li.row .del:disabled{opacity:.4;cursor:default}
+li.row .pv{order:3;flex:none;background:transparent;border:1px solid var(--line);color:var(--dim);padding:6px 10px;font-size:12.5px;cursor:pointer;font-family:inherit}
+li.row .pv:hover{color:var(--acc);border-color:#274a6e;background:#12202e}
+li.row .pv:disabled{opacity:.4;cursor:default}
+#pv{display:none;position:fixed;inset:0;z-index:60;background:#0b0e12;flex-direction:column}
+#pv.on{display:flex}
+.pvbar{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line);flex:none}
+.pvbar span{flex:1;min-width:0;font-size:13px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pvbar button{flex:none;background:var(--card2);border:1px solid var(--line);color:var(--fg);padding:9px 18px;font-size:14px;cursor:pointer;font-family:inherit}
+.pvbody{flex:1;display:flex;align-items:center;justify-content:center;padding:12px;overflow:auto;min-height:0}
+.pvbody img{max-width:100%;max-height:100%;image-rendering:pixelated}
+footer{position:sticky;bottom:0;z-index:20;background:var(--bg);border-top:1px solid var(--line);
+       padding:10px 12px calc(10px + env(safe-area-inset-bottom))}
+.fwrap{max-width:900px;margin:0 auto}
+.bar{height:3px;background:var(--card2);overflow:hidden;margin-bottom:9px}
+.bar i{display:block;height:100%;width:0;background:var(--acc);transition:width .18s}
+.btns{display:flex;gap:8px}
+.btn{flex:1;border:1px solid var(--line);padding:14px 8px;font:600 15px/1 inherit;cursor:pointer;background:var(--card2);color:var(--fg);font-family:inherit}
+.btn.primary{background:var(--acc);color:#06121f;border-color:var(--acc)}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.small{flex:none;padding:14px 14px}
+.stat{text-align:center;font-size:12px;color:var(--dim);margin-bottom:8px;min-height:17px}
+.err{color:var(--bad)}
+@media (max-width:420px){h1{font-size:15px}.drop{padding:22px 10px}}
+#alghint{white-space:pre-line}
+</style>
+</head>
+<body>
+<header>
+  <h1>图片混淆器</h1>
+</header>
+
+<main>
+  <div class="tabs">
+    <button id="tabMix" class="on">混淆图片</button>
+    <button id="tabUn">还原图片</button>
+  </div>
+
+  <div class="card">
+    <label class="lbl" for="pw">密码（可留空）</label>
+    <div class="pwrow">
+      <input id="pw" type="password" placeholder="留空 = 默认密钥" autocomplete="off" spellcheck="false">
+      <button class="iconbtn" id="eye" title="显示/隐藏">显示</button>
+    </div>
+    <div class="hint" id="pwhint"></div>
+  </div>
+
+  <div class="card" id="algcard">
+    <label class="lbl" for="alg">混淆算法</label>
+    <select id="alg">
+      <option value="2">标准 · 原文件封装</option>
+      <option value="1">彻底 · 全图打散</option>
+    </select>
+    <div class="hint" id="alghint"></div>
+  </div>
+
+  <div class="drop" id="drop">
+    <div class="big">点击选择图片（可多选）</div>
+    <div class="sub" id="subdrop">或把图片 / 文件夹拖到这里</div>
+  </div>
+  <input type="file" id="file" multiple accept="image/*" hidden>
+  <input type="file" id="dir" webkitdirectory directory multiple hidden>
+
+  <div class="grid">
+    <div class="card"><input type="checkbox" id="flat" checked><label for="flat">透明区域填白<br><span class="hint" style="margin:0">仅「彻底」需要</span></label></div>
+    <div class="card"><input type="checkbox" id="savedir" checked><label for="savedir">保存到文件夹<br><span class="hint" style="margin:0">下载时选一次目录</span></label></div>
+    <div class="card"><input type="checkbox" id="keepw"><label for="keepw">忽略非图片文件<br><span class="hint" style="margin:0">文件夹里挑图片</span></label></div>
+  </div>
+
+  <ul id="list"></ul>
+
+</main>
+
+<footer>
+  <div class="fwrap">
+    <div class="bar"><i id="prog"></i></div>
+    <div class="stat" id="stat">还没有选择图片</div>
+    <div class="btns">
+      <button class="btn primary" id="start">开始混淆</button>
+      <button class="btn small" id="zipbtn" disabled>打包 ZIP</button>
+      <button class="btn small" id="clear">清空</button>
+    </div>
+  </div>
+</footer>
+
+<div id="pv">
+  <div class="pvbar"><span id="pvname"></span><button type="button" id="pvclose">关闭</button></div>
+  <div class="pvbody" id="pvbody"><img id="pvimg" alt=""></div>
+</div>
+
+<script src="crypto.js"></script>
+<script src="codec.js"></script>
+<script src="codec2.js"></script>
+<script src="zip.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
