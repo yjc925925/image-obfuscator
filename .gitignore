@@ -1,0 +1,13 @@
+# Operating system cruft
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Local scratch
+node_modules/
+*.tmp

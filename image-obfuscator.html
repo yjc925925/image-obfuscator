@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f1216">
+<title>图片混淆器</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--bg:#0f1216;--card:#171c22;--card2:#1e242c;--line:#2a333d;--fg:#e9eef4;--dim:#8b98a6;--acc:#4da3ff;--ok:#37c98b;--bad:#ff5f6d;--warn:#ffb454}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+     min-height:100vh;display:flex;flex-direction:column;-webkit-text-size-adjust:100%;overflow-wrap:break-word}
+header{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line);
+       padding:calc(10px + env(safe-area-inset-top)) 14px 10px;display:flex;align-items:center;gap:10px}
+h1{margin:0;font-size:17px;font-weight:600;flex:1}
+main{flex:1;padding:12px 12px 8px;max-width:900px;width:100%;margin:0 auto}
+.tabs{display:flex;margin-bottom:10px;border:1px solid var(--line)}
+.tabs button{flex:1;border:0;background:var(--card);color:var(--dim);font:600 15px/1 inherit;padding:13px 8px;cursor:pointer;font-family:inherit}
+.tabs button+button{border-left:1px solid var(--line)}
+.tabs button.on{background:var(--card2);color:var(--fg);box-shadow:inset 0 -2px 0 var(--acc)}
+.card{background:var(--card);border:1px solid var(--line);padding:12px;margin-bottom:10px}
+label.lbl{display:block;font-size:12px;color:var(--dim);margin-bottom:6px}
+.pwrow{display:flex;gap:8px;align-items:center}
+input[type=password],input[type=text],select{min-width:0;background:var(--card2);border:1px solid var(--line);color:var(--fg);
+      padding:11px 12px;font:15px/1.2 inherit}
+input[type=password],input[type=text]{flex:1}
+select{width:100%;-webkit-appearance:none;appearance:none}
+input:focus,select:focus{outline:0;border-color:var(--acc)}
+.iconbtn{background:var(--card2);border:1px solid var(--line);color:var(--dim);padding:11px 12px;font-size:15px;cursor:pointer;font-family:inherit}
+.hint{font-size:12px;color:var(--dim);margin-top:7px}
+.drop{border:1px solid var(--line);padding:26px 14px;text-align:center;background:var(--card);cursor:pointer;margin-bottom:10px}
+.drop:hover,.drop.over{border-color:var(--acc);background:#12202e}
+.drop .big{font-size:16px;font-weight:600}
+.drop .sub{font-size:12.5px;color:var(--dim);margin-top:6px}
+.drop .sub u{color:var(--acc);text-decoration:underline;cursor:pointer}
+.grid{display:flex;gap:8px;margin-bottom:10px}
+.grid .card{margin:0;flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;font-size:13px}
+.grid input[type=checkbox]{width:18px;height:18px;accent-color:var(--acc);flex:none}
+ul#list{list-style:none;margin:0 0 10px;padding:0}
+li.row{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);padding:10px 12px;margin-bottom:7px}
+li.row .info{flex:1;min-width:0}
+li.row .nm{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+li.row .mt{font-size:11.5px;color:var(--dim);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip{font-size:11.5px;padding:3px 8px;flex:none;border:1px solid var(--line);color:var(--dim);white-space:nowrap}
+.chip.work{color:var(--warn);border-color:#5a4520;background:#241d0e}
+.chip.done{color:var(--ok);border-color:#1d5340;background:#0f241c}
+.chip.fail{color:var(--bad);border-color:#5c2027;background:#241114}
+.dl{order:4;flex:none;background:var(--card2);border:1px solid var(--line);color:var(--acc);padding:6px 10px;font-size:12.5px;cursor:pointer;text-decoration:none;font-family:inherit}
+li.row .del{order:5;flex:none;background:transparent;border:1px solid var(--line);color:var(--dim);padding:6px 10px;font-size:12.5px;cursor:pointer;font-family:inherit}
+li.row .del:hover{color:var(--bad);border-color:#5c2027;background:#241114}
+li.row .del:disabled{opacity:.4;cursor:default}
+li.row .pv{order:3;flex:none;background:transparent;border:1px solid var(--line);color:var(--dim);padding:6px 10px;font-size:12.5px;cursor:pointer;font-family:inherit}
+li.row .pv:hover{color:var(--acc);border-color:#274a6e;background:#12202e}
+li.row .pv:disabled{opacity:.4;cursor:default}
+#pv{display:none;position:fixed;inset:0;z-index:60;background:#0b0e12;flex-direction:column}
+#pv.on{display:flex}
+.pvbar{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line);flex:none}
+.pvbar span{flex:1;min-width:0;font-size:13px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pvbar button{flex:none;background:var(--card2);border:1px solid var(--line);color:var(--fg);padding:9px 18px;font-size:14px;cursor:pointer;font-family:inherit}
+.pvbody{flex:1;display:flex;align-items:center;justify-content:center;padding:12px;overflow:auto;min-height:0}
+.pvbody img{max-width:100%;max-height:100%;image-rendering:pixelated}
+footer{position:sticky;bottom:0;z-index:20;background:var(--bg);border-top:1px solid var(--line);
+       padding:10px 12px calc(10px + env(safe-area-inset-bottom))}
+.fwrap{max-width:900px;margin:0 auto}
+.bar{height:3px;background:var(--card2);overflow:hidden;margin-bottom:9px}
+.bar i{display:block;height:100%;width:0;background:var(--acc);transition:width .18s}
+.btns{display:flex;gap:8px}
+.btn{flex:1;border:1px solid var(--line);padding:14px 8px;font:600 15px/1 inherit;cursor:pointer;background:var(--card2);color:var(--fg);font-family:inherit}
+.btn.primary{background:var(--acc);color:#06121f;border-color:var(--acc)}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.small{flex:none;padding:14px 14px}
+.stat{text-align:center;font-size:12px;color:var(--dim);margin-bottom:8px;min-height:17px}
+.err{color:var(--bad)}
+@media (max-width:420px){h1{font-size:15px}.drop{padding:22px 10px}}
+#alghint{white-space:pre-line}
+</style>
+</head>
+<body>
+<header>
+  <h1>图片混淆器</h1>
+</header>
+
+<main>
+  <div class="tabs">
+    <button id="tabMix" class="on">混淆图片</button>
+    <button id="tabUn">还原图片</button>
+  </div>
+
+  <div class="card">
+    <label class="lbl" for="pw">密码（可留空）</label>
+    <div class="pwrow">
+      <input id="pw" type="password" placeholder="留空 = 默认密钥" autocomplete="off" spellcheck="false">
+      <button class="iconbtn" id="eye" title="显示/隐藏">显示</button>
+    </div>
+    <div class="hint" id="pwhint"></div>
+  </div>
+
+  <div class="card" id="algcard">
+    <label class="lbl" for="alg">混淆算法</label>
+    <select id="alg">
+      <option value="2">标准 · 原文件封装</option>
+      <option value="1">彻底 · 全图打散</option>
+    </select>
+    <div class="hint" id="alghint"></div>
+  </div>
+
+  <div class="drop" id="drop">
+    <div class="big">点击选择图片（可多选）</div>
+    <div class="sub" id="subdrop">或把图片 / 文件夹拖到这里</div>
+  </div>
+  <input type="file" id="file" multiple accept="image/*" hidden>
+  <input type="file" id="dir" webkitdirectory directory multiple hidden>
+
+  <div class="grid">
+    <div class="card"><input type="checkbox" id="flat" checked><label for="flat">透明区域填白<br><span class="hint" style="margin:0">仅「彻底」需要</span></label></div>
+    <div class="card"><input type="checkbox" id="savedir" checked><label for="savedir">保存到文件夹<br><span class="hint" style="margin:0">下载时选一次目录</span></label></div>
+    <div class="card"><input type="checkbox" id="keepw"><label for="keepw">忽略非图片文件<br><span class="hint" style="margin:0">文件夹里挑图片</span></label></div>
+  </div>
+
+  <ul id="list"></ul>
+
+</main>
+
+<footer>
+  <div class="fwrap">
+    <div class="bar"><i id="prog"></i></div>
+    <div class="stat" id="stat">还没有选择图片</div>
+    <div class="btns">
+      <button class="btn primary" id="start">开始混淆</button>
+      <button class="btn small" id="zipbtn" disabled>打包 ZIP</button>
+      <button class="btn small" id="clear">清空</button>
+    </div>
+  </div>
+</footer>
+
+<div id="pv">
+  <div class="pvbar"><span id="pvname"></span><button type="button" id="pvclose">关闭</button></div>
+  <div class="pvbody" id="pvbody"><img id="pvimg" alt=""></div>
+</div>
+
+<script>
+var HashCore = (function () {
+  'use strict';
+  var KTAB = new Uint32Array([
+    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2]);
+  var H0 = new Uint32Array([
+    0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
+    0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19]);
+  function rotr(x, n) { return (x >>> n) | (x << (32 - n)); }
+  function readU32(b, o) {
+    return ((b[o] << 24) | (b[o + 1] << 16) | (b[o + 2] << 8) | b[o + 3]) >>> 0;
+  }
+  function writeU32(b, o, v) {
+    b[o] = (v >>> 24) & 255; b[o + 1] = (v >>> 16) & 255;
+    b[o + 2] = (v >>> 8) & 255; b[o + 3] = v & 255;
+  }
+  function sha256(msg) {
+    var len = msg.length;
+    var total = Math.ceil((len + 9) / 64) * 64;
+    var buf = new Uint8Array(total);
+    buf.set(msg);
+    buf[len] = 0x80;
+    writeU32(buf, total - 8, Math.floor(len / 536870912));
+    writeU32(buf, total - 4, (len % 536870912) * 8);
+    var H = new Uint32Array(H0);
+    var W = new Uint32Array(64);
+    var i, off;
+    for (off = 0; off < total; off += 64) {
+      for (i = 0; i < 16; i++) W[i] = readU32(buf, off + i * 4);
+      for (i = 16; i < 64; i++) {
+        var x = W[i - 15], y = W[i - 2];
+        W[i] = (W[i - 16] + (rotr(x, 7) ^ rotr(x, 18) ^ (x >>> 3)) + W[i - 7]
+                + (rotr(y, 17) ^ rotr(y, 19) ^ (y >>> 10))) >>> 0;
+      }
+      var a = H[0], b = H[1], c = H[2], d = H[3], e = H[4], f = H[5], g = H[6], h = H[7];
+      for (i = 0; i < 64; i++) {
+        var S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
+        var ch = (e & f) ^ (~e & g);
+        var t1 = (h + S1 + ch + KTAB[i] + W[i]) >>> 0;
+        var S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
+        var maj = (a & b) ^ (a & c) ^ (b & c);
+        var t2 = (S0 + maj) >>> 0;
+        h = g; g = f; f = e; e = (d + t1) >>> 0;
+        d = c; c = b; b = a; a = (t1 + t2) >>> 0;
+      }
+      H[0] = (H[0] + a) >>> 0; H[1] = (H[1] + b) >>> 0; H[2] = (H[2] + c) >>> 0; H[3] = (H[3] + d) >>> 0;
+      H[4] = (H[4] + e) >>> 0; H[5] = (H[5] + f) >>> 0; H[6] = (H[6] + g) >>> 0; H[7] = (H[7] + h) >>> 0;
+    }
+    var out = new Uint8Array(32);
+    for (i = 0; i < 8; i++) writeU32(out, i * 4, H[i]);
+    return out;
+  }
+  function sfc32(a, b, c, d) {
+    var f = function () {
+      a |= 0; b |= 0; c |= 0; d |= 0;
+      var t = (a + b) | 0;
+      a = b ^ (b >>> 9);
+      b = (c + (c << 3)) | 0;
+      c = (c << 21) | (c >>> 11);
+      d = (d + 1) | 0;
+      t = (t + d) | 0;
+      c = (c + t) | 0;
+      return t >>> 0;
+    };
+    for (var i = 0; i < 16; i++) f();
+    return f;
+  }
+  function concat(a, b) {
+    var o = new Uint8Array(a.length + b.length);
+    o.set(a, 0); o.set(b, a.length);
+    return o;
+  }
+  function streamFrom(seed, tag) {
+    var h = sha256(concat(seed, tag));
+    return sfc32(readU32(h, 0), readU32(h, 4), readU32(h, 8), readU32(h, 12));
+  }
+  var _te = null;
+  function utf8(s) {
+    if (typeof TextEncoder !== 'undefined') {
+      if (!_te) _te = new TextEncoder();
+      return _te.encode(s);
+    }
+    var out = [], i, c;
+    for (i = 0; i < s.length; i++) {
+      c = s.charCodeAt(i);
+      if (c < 0x80) out.push(c);
+      else if (c < 0x800) out.push(0xc0 | (c >> 6), 0x80 | (c & 63));
+      else out.push(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));
+    }
+    return new Uint8Array(out);
+  }
+  function hex(b) {
+    var s = '', i;
+    for (i = 0; i < b.length; i++) s += (b[i] < 16 ? '0' : '') + b[i].toString(16);
+    return s;
+  }
+  return { sha256: sha256, sfc32: sfc32, streamFrom: streamFrom, concat: concat,
+           utf8: utf8, hex: hex, readU32: readU32, writeU32: writeU32 };
+})();
+
+</script>
+<script>
+var Codec = (function () {
+  'use strict';
+  var C = HashCore;
+  var MAGIC   = [0x49, 0x4D, 0x47, 0x58];
+  var VERSION = 1;
+  var EXTRA   = 16;
+  var HDR_OFF = 9;
+  var HDR_LEN = 32;
+  var PAY_OFF = 42;
+  var PAY_PIX = 14;
+  var KDF_ROUNDS = 4096;
+  var MAX_PIXELS = 48000000;
+  var MAX_SIDE   = 32000;
+  var T_PERM = new Uint8Array([0x50]);
+  var T_DATA = new Uint8Array([0x44]);
+  function li(k) { return ((k / 3) | 0) * 4 + (k % 3); }
+  function fillRandom(b) {
+    if (typeof crypto !== 'undefined' && crypto && crypto.getRandomValues) {
+      crypto.getRandomValues(b);
+      return b;
+    }
+    for (var i = 0; i < b.length; i++) b[i] = (Math.random() * 256) | 0;
+    return b;
+  }
+  function deriveKey(pw, nonce) {
+    var p = C.utf8(pw || '');
+    var buf = new Uint8Array(p.length + 8);
+    buf.set(p, 0);
+    buf.set(nonce, p.length);
+    var h = C.sha256(buf);
+    for (var i = 1; i < KDF_ROUNDS; i++) h = C.sha256(h);
+    return h;
+  }
+  function buildPerm(N, key) {
+    var perm = new Int32Array(N);
+    var i;
+    for (i = 0; i < N; i++) perm[i] = i;
+    var r = C.streamFrom(key, T_PERM);
+    for (i = N - 1; i > 0; i--) {
+      var j = (r() / 4294967296 * (i + 1)) | 0;
+      var t = perm[i]; perm[i] = perm[j]; perm[j] = t;
+    }
+    return perm;
+  }
+  function xorStream(buf, p0, p1, key) {
+    var r = C.streamFrom(key, T_DATA);
+    var cur = 0, avail = 0;
+    for (var p = p0; p < p1; p++) {
+      var o = p << 2;
+      for (var c = 0; c < 3; c++) {
+        if (avail === 0) { cur = r(); avail = 4; }
+        buf[o + c] = buf[o + c] ^ (cur & 255);
+        cur = cur >>> 8;
+        avail--;
+      }
+    }
+  }
+  function isMagic(h) {
+    if (h[0] === MAGIC[0] && h[1] === MAGIC[1] && h[2] === MAGIC[2] && h[3] === MAGIC[3]) return true;
+    return h[0] === 0x43 && h[1] === 0x57 && h[2] === 0x4F && h[3] === 0x31;
+  }
+  function encode(src, w, h, pw) {
+    w = w | 0; h = h | 0;
+    if (!(w > 0 && h > 0)) throw new Error('图片尺寸无效');
+    var N = w * h;
+    var dh = Math.ceil(EXTRA / h);
+    var W2 = w + dh, H2 = h, N2 = W2 * H2;
+    if (W2 > MAX_SIDE || H2 > MAX_SIDE) throw new Error('图片尺寸超过上限 ' + MAX_SIDE + ' 像素');
+    if (N2 > MAX_PIXELS) throw new Error('图片过大：' + (N2 / 1e6).toFixed(1) + ' 百万像素，超过上限 ' + (MAX_PIXELS / 1e6) + ' 百万');
+    var out = new Uint8ClampedArray(N2 * 4);
+    var p, i;
+    for (p = 0; p < N2; p++) out[(p << 2) + 3] = 255;
+    var nonce = fillRandom(new Uint8Array(8));
+    for (i = 0; i < 8; i++) out[li(i)] = nonce[i];
+    out[li(8)] = 0xA5;
+    var key = deriveKey(pw, nonce);
+    var hdr = new Uint8Array(HDR_LEN);
+    hdr[0] = MAGIC[0]; hdr[1] = MAGIC[1]; hdr[2] = MAGIC[2]; hdr[3] = MAGIC[3];
+    hdr[4] = VERSION;
+    hdr[5] = pw ? 1 : 0;
+    hdr[6] = 0; hdr[7] = 0;
+    C.writeU32(hdr, 8, w);
+    C.writeU32(hdr, 12, h);
+    C.writeU32(hdr, 16, N * 3);
+    C.writeU32(hdr, 20, 0);
+    var chk = C.sha256(C.concat(key, hdr.subarray(0, 24)));
+    for (i = 0; i < 8; i++) hdr[24 + i] = chk[i];
+    for (i = 0; i < HDR_LEN; i++) out[li(HDR_OFF + i)] = hdr[i];
+    var perm = buildPerm(N, key);
+    for (i = 0; i < N; i++) {
+      var s = perm[i] << 2, d = (PAY_PIX + i) << 2;
+      out[d] = src[s]; out[d + 1] = src[s + 1]; out[d + 2] = src[s + 2];
+    }
+    perm = null;
+    xorStream(out, 3, N2, key);
+    return { data: out, width: W2, height: H2 };
+  }
+  function decode(src, w2, h2, pw) {
+    w2 = w2 | 0; h2 = h2 | 0;
+    var N2 = w2 * h2;
+    if (!(N2 > EXTRA)) throw new Error('这不是本工具生成的混淆图');
+    var nonce = new Uint8Array(8);
+    for (var i = 0; i < 8; i++) nonce[i] = src[li(i)];
+    var key = deriveKey(pw, nonce);
+    xorStream(src, 3, N2, key);
+    var hdr = new Uint8Array(HDR_LEN);
+    for (i = 0; i < HDR_LEN; i++) hdr[i] = src[li(HDR_OFF + i)];
+    if (!isMagic(hdr)) {
+      throw new Error('不是本工具生成的混淆图，或图片被压缩/裁剪/转过格式（请务必保持 PNG 原样）');
+    }
+    if (hdr[4] !== VERSION) throw new Error('版本不匹配：本图 v' + hdr[4] + '，本页 v' + VERSION);
+    var W = C.readU32(hdr, 8), H = C.readU32(hdr, 12), PB = C.readU32(hdr, 16);
+    if (!(W > 0 && H > 0)) throw new Error('文件头数据损坏');
+    var N = W * H;
+    if (PB !== N * 3) throw new Error('文件头数据损坏（长度不符）');
+    if (N > N2 - PAY_PIX) throw new Error('图片被裁剪过，无法还原');
+    var chk = C.sha256(C.concat(key, hdr.subarray(0, 24)));
+    var ok = true;
+    for (i = 0; i < 8; i++) if (chk[i] !== hdr[24 + i]) { ok = false; break; }
+    if (!ok) throw new Error('密码错误，或图片文件已损坏');
+    var perm = buildPerm(N, key);
+    var out = new Uint8ClampedArray(N * 4);
+    for (i = 0; i < N; i++) {
+      var s = (PAY_PIX + i) << 2, d = perm[i] << 2;
+      out[d] = src[s]; out[d + 1] = src[s + 1]; out[d + 2] = src[s + 2]; out[d + 3] = 255;
+    }
+    return { data: out, width: W, height: H };
+  }
+  function probe(src, w2, h2, pw) {
+    try {
+      var n = new Uint8Array(8), i;
+      for (i = 0; i < 8; i++) n[i] = src[li(i)];
+      var key = deriveKey(pw, n);
+      var tmp = new Uint8ClampedArray(64 * 4);
+      for (i = 0; i < 64; i++) { tmp[(i << 2)] = src[(i << 2)]; }
+      return { nonce: n, ok: true };
+    } catch (e) { return { ok: false }; }
+  }
+  return { encode: encode, decode: decode, probe: probe,
+           MAGIC: MAGIC, VERSION: VERSION, EXTRA: EXTRA, KDF_ROUNDS: KDF_ROUNDS,
+           MAX_PIXELS: MAX_PIXELS, _li: li };
+})();
+
+</script>
+<script>
+(function () {
+  'use strict';
+  var C = HashCore;
+  var MAGIC2 = [0x49, 0x4D, 0x47, 0x58];
+  var PREFIX = 9;
+  var HB_LEN = 64;
+  var FIXED = PREFIX + HB_LEN;
+  var NAME_MAX = 240;
+  var KDF_ROUNDS = 4096;
+  var MAX_PIXELS = 48000000;
+  var MAX_SIDE = 32000;
+  var T_DATA = new Uint8Array([0x44]);
+  function li(k) { return ((k / 3) | 0) * 4 + (k % 3); }
+  function fillRandom(b) {
+    if (typeof crypto !== 'undefined' && crypto && crypto.getRandomValues) {
+      crypto.getRandomValues(b);
+      return b;
+    }
+    for (var i = 0; i < b.length; i++) b[i] = (Math.random() * 256) | 0;
+    return b;
+  }
+  function deriveKey(pw, nonce) {
+    var p = C.utf8(pw || '');
+    var buf = new Uint8Array(p.length + 8);
+    buf.set(p, 0);
+    buf.set(nonce, p.length);
+    var h = C.sha256(buf);
+    for (var i = 1; i < KDF_ROUNDS; i++) h = C.sha256(h);
+    return h;
+  }
+  function xorStream(buf, p0, p1, key) {
+    var r = C.streamFrom(key, T_DATA);
+    var cur = 0, avail = 0;
+    for (var p = p0; p < p1; p++) {
+      var o = p << 2;
+      for (var c = 0; c < 3; c++) {
+        if (avail === 0) { cur = r(); avail = 4; }
+        buf[o + c] = buf[o + c] ^ (cur & 255);
+        cur = cur >>> 8;
+        avail--;
+      }
+    }
+  }
+  function nameBytes(name) {
+    var s = String(name == null ? '' : name);
+    var chars = Array.from ? Array.from(s) : s.split('');
+    if (chars.length > 100) s = chars.slice(0, 100).join('');
+    var b = C.utf8(s);
+    if (b.length > NAME_MAX) {
+      var n = NAME_MAX;
+      while (n > 0 && (b[n] & 0xC0) === 0x80) n--;
+      b = b.subarray(0, n);
+    }
+    return b;
+  }
+  function nameFromBytes(b) {
+    if (!b.length) return '';
+    try {
+      return new TextDecoder('utf-8', { fatal: false }).decode(b);
+    } catch (e) {
+      var s = '';
+      for (var i = 0; i < b.length; i++) s += String.fromCharCode(b[i]);
+      return s;
+    }
+  }
+  function canvasFor(total, ow, oh) {
+    var need = Math.ceil(total / 3);
+    if (need > MAX_PIXELS) {
+      throw new Error('文件太大：需要 ' + (need / 1e6).toFixed(1) + ' 百万像素的混淆图，超过上限 ' + (MAX_PIXELS / 1e6) + ' 百万');
+    }
+    var w0 = (ow | 0) > 0 ? (ow | 0) : 1;
+    var h0 = (oh | 0) > 0 ? (oh | 0) : 1;
+    var base = Math.sqrt(need / (w0 * h0));
+    var k = 1, t, W, H;
+    for (t = 0; t < 90; t++) {
+      W = Math.round(w0 * base * k);
+      H = Math.round(h0 * base * k);
+      if (W < 8) W = 8;
+      if (H < 8) H = 8;
+      if (W > MAX_SIDE) W = MAX_SIDE;
+      if (H > MAX_SIDE) H = MAX_SIDE;
+      if (W * H >= need) return { w: W, h: H };
+      k *= 1.05;
+    }
+    throw new Error('文件太大，放不进混淆图');
+  }
+  function encode2(pay, pw, opts) {
+    opts = opts || {};
+    var data = (pay instanceof Uint8Array) ? pay : new Uint8Array(pay);
+    var nb = nameBytes(opts.name);
+    var total = FIXED + nb.length + data.length;
+    var dims = canvasFor(total, opts.w, opts.h);
+    var W2 = dims.w, H2 = dims.h, N2 = W2 * H2;
+    var out = new Uint8ClampedArray(N2 * 4);
+    var i, p;
+    for (p = 0; p < N2; p++) out[(p << 2) + 3] = 255;
+    var nonce = fillRandom(new Uint8Array(8));
+    for (i = 0; i < 8; i++) out[li(i)] = nonce[i];
+    out[li(8)] = 0xA5;
+    var key = deriveKey(pw, nonce);
+    var hb = new Uint8Array(HB_LEN);
+    hb[0] = MAGIC2[0]; hb[1] = MAGIC2[1]; hb[2] = MAGIC2[2]; hb[3] = MAGIC2[3];
+    hb[4] = 2;
+    hb[5] = (pw ? 1 : 0) | (nb.length ? 2 : 0);
+    hb[6] = nb.length & 255;
+    hb[7] = (nb.length >> 8) & 255;
+    C.writeU32(hb, 8, opts.w | 0);
+    C.writeU32(hb, 12, opts.h | 0);
+    C.writeU32(hb, 16, data.length);
+    C.writeU32(hb, 20, 0);
+    var ps = C.sha256(data);
+    for (i = 0; i < 32; i++) hb[24 + i] = ps[i];
+    var tg = C.sha256(C.concat(key, hb.subarray(0, 56)));
+    for (i = 0; i < 8; i++) hb[56 + i] = tg[i];
+    var off = PREFIX;
+    for (i = 0; i < HB_LEN; i++) out[li(off + i)] = hb[i];
+    off += HB_LEN;
+    for (i = 0; i < nb.length; i++) out[li(off + i)] = nb[i];
+    off += nb.length;
+    for (i = 0; i < data.length; i++) out[li(off + i)] = data[i];
+    xorStream(out, 3, N2, key);
+    return { data: out, width: W2, height: H2, need: Math.ceil(total / 3), total: total };
+  }
+  function decode2(src, w2, h2, pw, key) {
+    var N2 = (w2 | 0) * (h2 | 0);
+    var i;
+    if (!key) {
+      var nonce = new Uint8Array(8);
+      for (i = 0; i < 8; i++) nonce[i] = src[li(i)];
+      key = deriveKey(pw, nonce);
+    }
+    xorStream(src, 3, N2, key);
+    var hb = new Uint8Array(HB_LEN);
+    for (i = 0; i < HB_LEN; i++) hb[i] = src[li(PREFIX + i)];
+    var nameLen = hb[6] | (hb[7] << 8);
+    var ow = C.readU32(hb, 8), oh = C.readU32(hb, 12), plen = C.readU32(hb, 16);
+    var tg = C.sha256(C.concat(key, hb.subarray(0, 56)));
+    for (i = 0; i < 8; i++) if (tg[i] !== hb[56 + i]) throw new Error('密码错误，或图片文件已损坏');
+    if (nameLen > 4096 || plen > N2 * 3) throw new Error('图片文件已损坏（头部数据异常）');
+    var payOff = PREFIX + HB_LEN + nameLen;
+    if (payOff + plen > N2 * 3) throw new Error('混淆图被裁剪过，无法还原');
+    var name = '';
+    if (nameLen > 0) {
+      var nb = new Uint8Array(nameLen);
+      for (i = 0; i < nameLen; i++) nb[i] = src[li(PREFIX + HB_LEN + i)];
+      name = nameFromBytes(nb);
+    }
+    var pay = new Uint8Array(plen);
+    for (i = 0; i < plen; i++) pay[i] = src[li(payOff + i)];
+    var ps = C.sha256(pay);
+    for (i = 0; i < 32; i++) if (ps[i] !== hb[24 + i]) throw new Error('图片数据已损坏（还原出来的文件不完整）');
+    return { kind: 'file', bytes: pay, name: name, origW: ow, origH: oh };
+  }
+  function autoDecode(src, w2, h2, pw) {
+    var N2 = (w2 | 0) * (h2 | 0);
+    if (!(N2 > 3)) throw new Error('这不是本工具生成的混淆图');
+    var nonce = new Uint8Array(8), i;
+    for (i = 0; i < 8; i++) nonce[i] = src[li(i)];
+    var key = deriveKey(pw, nonce);
+    var stream = C.streamFrom(key, T_DATA);
+    var w0 = stream(), w1 = stream();
+    var ks = [w0 & 255, (w0 >>> 8) & 255, (w0 >>> 16) & 255, (w0 >>> 24) & 255, w1 & 255];
+    var b = new Uint8Array(5);
+    for (i = 0; i < 5; i++) b[i] = src[li(PREFIX + i)] ^ ks[i];
+    var isNew = (b[0] === 0x49 && b[1] === 0x4D && b[2] === 0x47 && b[3] === 0x58);
+    var isOld = (b[0] === 0x43 && b[1] === 0x57 && b[2] === 0x4F && b[3] === 0x31);
+    if (!isNew && !isOld) {
+      if (src[li(8)] === 0xA5) throw new Error('密码错误，或图片文件已损坏');
+      throw new Error('这不是本工具生成的混淆图，或图片被压缩/裁剪/转过格式（请务必保持 PNG 原样）');
+    }
+    if (isOld || b[4] === 1) {
+      var o = Codec.decode(src, w2, h2, pw);
+      return { kind: 'pixels', data: o.data, width: o.width, height: o.height };
+    }
+    if (b[4] !== 2) throw new Error('版本不匹配：本图来自算法版本 ' + b[4]);
+    return decode2(src, w2, h2, pw, key);
+  }
+  Codec.encode2 = encode2;
+  Codec.decode2 = decode2;
+  Codec.autoDecode = autoDecode;
+  Codec.V2 = 2;
+  Codec.HDR2 = FIXED;
+  Codec.NAME_MAX = NAME_MAX;
+  Codec._li2 = li;
+})();
+
+</script>
+<script>
+var ZipWriter = (function () {
+  'use strict';
+  var T = (function () {
+    var t = new Uint32Array(256), n, k, c;
+    for (n = 0; n < 256; n++) {
+      c = n;
+      for (k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      t[n] = c >>> 0;
+    }
+    return t;
+  })();
+  function crc32(b) {
+    var c = 0xFFFFFFFF;
+    for (var i = 0; i < b.length; i++) c = (T[(c ^ b[i]) & 255] ^ (c >>> 8)) >>> 0;
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+  function zipNames(names) {
+    var seen = Object.create(null), out = [];
+    for (var i = 0; i < names.length; i++) {
+      var orig = names[i];
+      var dot = orig.lastIndexOf('.');
+      var base = dot > 0 ? orig.slice(0, dot) : orig;
+      var ext = dot > 0 ? orig.slice(dot) : '';
+      var cand = orig, k = 1;
+      while (seen[cand]) { k++; cand = base + '(' + k + ')' + ext; }
+      seen[cand] = 1;
+      out.push(cand);
+    }
+    return out;
+  }
+  function build(files) {
+    var enc = new TextEncoder();
+    var now = new Date();
+    var dTime = ((now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1)) & 0xFFFF;
+    var dDate = (((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate()) & 0xFFFF;
+    var parts = [], cd = [], offset = 0, i, j;
+    for (i = 0; i < files.length; i++) {
+      var nameB = enc.encode(files[i].name);
+      var data = files[i].data;
+      var crc = crc32(data);
+      var lh = new Uint8Array(30 + nameB.length);
+      var v = new DataView(lh.buffer);
+      v.setUint32(0, 0x04034B50, true);
+      v.setUint16(4, 20, true);
+      v.setUint16(6, 0x0800, true);
+      v.setUint16(8, 0, true);
+      v.setUint16(10, dTime, true);
+      v.setUint16(12, dDate, true);
+      v.setUint32(14, crc, true);
+      v.setUint32(18, data.length, true);
+      v.setUint32(22, data.length, true);
+      v.setUint16(26, nameB.length, true);
+      v.setUint16(28, 0, true);
+      lh.set(nameB, 30);
+      parts.push(lh, data);
+      var ch = new Uint8Array(46 + nameB.length);
+      var w = new DataView(ch.buffer);
+      w.setUint32(0, 0x02014B50, true);
+      w.setUint16(4, 20, true);
+      w.setUint16(6, 20, true);
+      w.setUint16(8, 0x0800, true);
+      w.setUint16(10, 0, true);
+      w.setUint16(12, dTime, true);
+      w.setUint16(14, dDate, true);
+      w.setUint32(16, crc, true);
+      w.setUint32(20, data.length, true);
+      w.setUint32(24, data.length, true);
+      w.setUint16(28, nameB.length, true);
+      w.setUint16(30, 0, true);
+      w.setUint16(32, 0, true);
+      w.setUint16(34, 0, true);
+      w.setUint16(36, 0, true);
+      w.setUint32(38, 0, true);
+      w.setUint32(42, offset, true);
+      ch.set(nameB, 46);
+      cd.push(ch);
+      offset += lh.length + data.length;
+    }
+    var cdSize = 0;
+    for (j = 0; j < cd.length; j++) cdSize += cd[j].length;
+    var eo = new Uint8Array(22);
+    var e = new DataView(eo.buffer);
+    e.setUint32(0, 0x06054B50, true);
+    e.setUint16(4, 0, true);
+    e.setUint16(6, 0, true);
+    e.setUint16(8, files.length, true);
+    e.setUint16(10, files.length, true);
+    e.setUint32(12, cdSize, true);
+    e.setUint32(16, offset, true);
+    e.setUint16(20, 0, true);
+    var all = parts.concat(cd);
+    all.push(eo);
+    return new Blob(all, { type: 'application/zip' });
+  }
+  return { build: build, crc32: crc32, zipNames: zipNames };
+})();
+
+</script>
+<script>
+(function () {
+  'use strict';
+  var els = {}, items = [], autoId = 1;
+  var mode = 'mix', running = false, stopFlag = false;
+  function $(id) { return document.getElementById(id); }
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function human(n) {
+    if (n < 1024) return n + ' B';
+    if (n < 1048576) return (n / 1024).toFixed(1) + ' KB';
+    if (n < 1073741824) return (n / 1048576).toFixed(1) + ' MB';
+    return (n / 1073741824).toFixed(2) + ' GB';
+  }
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function stamp() {
+    var d = new Date();
+    return d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) + '_' + pad2(d.getHours()) + pad2(d.getMinutes());
+  }
+  function isImage(file) {
+    if (file.type && file.type.indexOf('image/') === 0) return true;
+    return /\.(png|jpe?g|webp|gif|bmp|avif|heic|heif)$/i.test(file.name || '');
+  }
+  function imageSize(file) {
+    return new Promise(function (res) {
+      var url = URL.createObjectURL(file), img = new Image();
+      img.onload = function () {
+        URL.revokeObjectURL(url);
+        res({ w: img.naturalWidth | 0, h: img.naturalHeight | 0 });
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); res(null); };
+      img.src = url;
+    });
+  }
+  function safeName(n) {
+    var s = String(n == null ? '' : n).replace(/[\\/:*?"<>|]/g, '_').replace(/[\u0000-\u001f]/g, '').replace(/^[.\s]+/, '').trim();
+    if (s.length > 120) s = s.slice(0, 120);
+    return s;
+  }
+  function splitName(n) {
+    var dot = n.lastIndexOf('.');
+    return dot > 0 ? { base: n.slice(0, dot), ext: n.slice(dot) } : { base: n, ext: '' };
+  }
+  function mixName(n) { return splitName(n).base + '.mix.png'; }
+  function unmixName(n) {
+    var s = splitName(n);
+    return (/\.mix$/i.test(s.base) ? s.base.slice(0, -4) : 'unmix_' + s.base) + '.png';
+  }
+  function readImage(file, flatten) {
+    return new Promise(function (res, rej) {
+      var url = URL.createObjectURL(file), img = new Image();
+      img.onload = function () {
+        var w = img.naturalWidth, h = img.naturalHeight, done = function () { URL.revokeObjectURL(url); };
+        try {
+          if (!w || !h) { done(); return rej(new Error('图片尺寸无效（可能是 HEIC 或损坏的文件）')); }
+          if (w > 32000 || h > 32000 || w * h > (Codec.MAX_PIXELS || 48000000)) {
+            done();
+            return rej(new Error('图片太大：' + w + 'x' + h + '（上限 ' + Math.round((Codec.MAX_PIXELS || 48000000) / 1e6) + ' 百万像素）'));
+          }
+          var c = document.createElement('canvas');
+          c.width = w; c.height = h;
+          var x = c.getContext('2d', { willReadFrequently: true });
+          if (!x) { done(); return rej(new Error('无法创建画布')); }
+          if (flatten) { x.fillStyle = '#ffffff'; x.fillRect(0, 0, w, h); }
+          x.drawImage(img, 0, 0);
+          var d = x.getImageData(0, 0, w, h);
+          c.width = 0; c.height = 0;
+          done();
+          res({ data: d.data, width: w, height: h });
+        } catch (e) {
+          done();
+          rej(new Error('读取像素失败：' + (e && e.message ? e.message : e) + '（图片过大可能导致内存不足）'));
+        }
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); rej(new Error('无法打开：格式不被浏览器支持（如 HEIC）或文件已损坏')); };
+      img.src = url;
+    });
+  }
+  function toPng(data, w, h) {
+    return new Promise(function (res, rej) {
+      try {
+        var c = document.createElement('canvas');
+        c.width = w; c.height = h;
+        var x = c.getContext('2d');
+        x.putImageData(new ImageData(data, w, h), 0, 0);
+        c.toBlob(function (b) {
+          c.width = 0; c.height = 0;
+          if (b) res(b); else rej(new Error('PNG 编码失败（内存不足？）'));
+        }, 'image/png');
+      } catch (e) { rej(new Error('PNG 编码失败：' + (e && e.message ? e.message : e))); }
+    });
+  }
+  function download(blob, name) {
+    var url = URL.createObjectURL(blob), a = document.createElement('a');
+    a.href = url; a.download = name; a.rel = 'noopener';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(url); if (a.parentNode) a.parentNode.removeChild(a); }, 8000);
+  }
+  function addFiles(list) {
+    var n = 0;
+    for (var i = 0; i < list.length; i++) {
+      var f = list[i];
+      if (!f) continue;
+      if (els.keepw.checked && !isImage(f)) continue;
+      items.push({
+        id: autoId++, file: f, name: f.name || ('image_' + autoId + '.bin'),
+        size: f.size || 0, status: 'wait', msg: human(f.size || 0), blob: null, outName: ''
+      });
+      n++;
+    }
+    if (n) { renderList(); setStat(); }
+    return n;
+  }
+  var dirHandle = null, dirNo = false, dirPend = null;
+  function fsaOk() { return !!(window.isSecureContext && window.showDirectoryPicker); }
+  function wantDir() { return !!(els.savedir && els.savedir.checked && fsaOk()); }
+  function ensureDir() {
+    if (dirHandle) return Promise.resolve(true);
+    if (dirNo || !fsaOk()) return Promise.resolve(false);
+    if (dirPend) return dirPend;
+    dirPend = window.showDirectoryPicker({ mode: 'readwrite', id: 'imxout' }).then(function (hd) {
+      dirHandle = hd; dirPend = null; return true;
+    }, function (e) {
+      dirPend = null;
+      if (e && e.name === 'AbortError') dirNo = true;
+      return false;
+    });
+    return dirPend;
+  }
+  function writeTo(blob, name) {
+    return dirHandle.getFileHandle(name, { create: true }).then(function (fh) {
+      return fh.createWritable();
+    }).then(function (w) {
+      return w.write(blob).then(function () { return w.close(); });
+    }).then(function () {
+      return true;
+    }, function () {
+      dirHandle = null;
+      return false;
+    });
+  }
+  function save(blob, name) {
+    if (!wantDir()) { download(blob, name); return Promise.resolve(false); }
+    return ensureDir().then(function (ok) {
+      if (!ok) { download(blob, name); return false; }
+      return writeTo(blob, name).then(function (done) {
+        if (done) setStat('已保存到文件夹：' + name);
+        else download(blob, name);
+        return done;
+      });
+    });
+  }
+  var pvUrl = null;
+  function openPreview(it) {
+    if (!it || !it.blob) return;
+    var box = $('pv'), img = $('pvimg');
+    if (!box || !img) return;
+    if (pvUrl) URL.revokeObjectURL(pvUrl);
+    pvUrl = URL.createObjectURL(it.blob);
+    img.src = pvUrl;
+    $('pvname').textContent = (it.outName || it.name) + ' · ' + human(it.blob.size);
+    box.className = 'on';
+  }
+  function closePreview() {
+    var box = $('pv');
+    if (!box || box.className !== 'on') return;
+    box.className = '';
+    $('pvimg').removeAttribute('src');
+    if (pvUrl) { URL.revokeObjectURL(pvUrl); pvUrl = null; }
+  }
+  $('pv').onclick = function (ev) { if (ev.target.id !== 'pvimg' && ev.target.id !== 'pvclose') closePreview(); };
+  $('pvclose').onclick = closePreview;
+  document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') closePreview(); });
+  function rowFor(it) {
+    var li = document.createElement('li');
+    li.className = 'row'; li.id = 'r' + it.id;
+    var info = document.createElement('div'); info.className = 'info';
+    var nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = it.name;
+    var mt = document.createElement('div'); mt.className = 'mt'; mt.textContent = it.msg;
+    info.appendChild(nm); info.appendChild(mt);
+    var chip = document.createElement('span'); chip.className = 'chip'; chip.textContent = '待处理';
+    var pv = document.createElement('button'); pv.type = 'button'; pv.className = 'pv'; pv.textContent = '预览'; pv.disabled = true;
+    pv.onclick = function (ev) { ev.stopPropagation(); openPreview(it); };
+    var del = document.createElement('button'); del.type = 'button'; del.className = 'del'; del.textContent = '删除';
+    del.onclick = function (ev) { ev.stopPropagation(); removeItem(it); };
+    li.appendChild(info); li.appendChild(chip); li.appendChild(pv); li.appendChild(del);
+    it._del = del; it._pv = pv;
+    it._chip = chip; it._mt = mt;
+    return li;
+  }
+  function removeItem(it) {
+    if (running) return;
+    var i = items.indexOf(it);
+    if (i < 0) return;
+    items.splice(i, 1);
+    var row = document.getElementById('r' + it.id);
+    if (row) {
+      var a = row.querySelector('a.dl');
+      if (a) URL.revokeObjectURL(a.href);
+      if (row.parentNode) row.parentNode.removeChild(row);
+    }
+    setStat();
+  }
+  function renderList() {
+    var ul = els.list;
+    ul.innerHTML = '';
+    for (var i = 0; i < items.length; i++) ul.appendChild(rowFor(items[i]));
+    updateBtns();
+  }
+  function updateRow(it) {
+    var c = it._chip, m = it._mt;
+    if (!c) return;
+    c.className = 'chip' + (it.status === 'work' ? ' work' : it.status === 'done' ? ' done' : it.status === 'fail' ? ' fail' : '');
+    c.textContent = it.status === 'work' ? '处理中…' : it.status === 'done' ? '完成' : it.status === 'fail' ? '失败' : '待处理';
+    if (it.status === 'done') {
+      m.innerHTML = '';
+      m.appendChild(document.createTextNode(human(it.size) + ' · ' + it.msg + ' · '));
+      var a = document.createElement('a');
+      a.className = 'dl'; a.textContent = '下载'; a.download = it.outName;
+      a.href = URL.createObjectURL(it.blob);
+      a.onclick = function (ev) { if (wantDir()) { ev.preventDefault(); save(it.blob, it.outName); } };
+      var row = document.getElementById('r' + it.id);
+      if (row) {
+        var old = row.querySelector('a.dl');
+        if (old) { row.removeChild(old); URL.revokeObjectURL(old.href); }
+        row.appendChild(a);
+      }
+    } else if (it.status === 'fail') {
+      m.innerHTML = '';
+      var s = document.createElement('span'); s.className = 'err'; s.textContent = it.msg;
+      m.appendChild(s);
+    } else { m.textContent = it.msg; }
+  }
+  function setStat(txt) {
+    if (txt) { els.stat.textContent = txt; return; }
+    var total = items.length, done = 0, fail = 0;
+    for (var i = 0; i < items.length; i++) { if (items[i].status === 'done') done++; else if (items[i].status === 'fail') fail++; }
+    els.prog.style.width = (total ? Math.round(100 * (done + fail) / total) : 0) + '%';
+    if (!total) els.stat.textContent = '还没有选择图片';
+    else els.stat.textContent = '共 ' + total + ' 张 · 完成 ' + done + (fail ? ' · 失败 ' + fail : '') + (running ? ' · 处理中…' : '');
+    updateBtns();
+  }
+  function updateBtns() {
+    var done = 0, left = 0;
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].status === 'done') done++; else left++;
+    }
+    for (var q = 0; q < items.length; q++) { if (items[q]._pv) items[q]._pv.disabled = running || items[q].status !== 'done'; }
+    els.zipbtn.disabled = !done;
+    els.start.disabled = running || !left;
+    els.start.textContent = running ? '处理中…（点我停止）' : (mode === 'mix' ? '开始混淆' : '开始还原');
+    els.clear.disabled = running || !items.length;
+    var dels = els.list.querySelectorAll('button.del');
+    for (var j = 0; j < dels.length; j++) dels[j].disabled = running;
+  }
+  function mixPixels(it, pw, flatten) {
+    return readImage(it.file, flatten).then(function (src) {
+      return sleep(0).then(function () {
+        var out = Codec.encode(src.data, src.width, src.height, pw);
+        it.msg = src.width + 'x' + src.height + ' -> ' + out.width + 'x' + out.height;
+        it.outName = mixName(it.name);
+        return sleep(0).then(function () {
+          return toPng(out.data, out.width, out.height).then(function (b) { it.blob = b; });
+        });
+      });
+    });
+  }
+  function mixFile(it, pw) {
+    return it.file.arrayBuffer().then(function (ab) {
+      return imageSize(it.file).then(function (d) {
+        return sleep(0).then(function () {
+          var out = Codec.encode2(new Uint8Array(ab), pw, { name: it.name, w: d ? d.w : 0, h: d ? d.h : 0 });
+          it.outName = mixName(it.name);
+          return sleep(0).then(function () {
+            return toPng(out.data, out.width, out.height).then(function (b) {
+              it.blob = b;
+              it.msg = '混淆图 ' + out.width + 'x' + out.height + ' · ' + human(b.size) + '（原文件 ' + human(it.size) + '）';
+            });
+          });
+        });
+      });
+    });
+  }
+  function unmix(it, pw) {
+    return readImage(it.file, false).then(function (src) {
+      return sleep(0).then(function () {
+        var out = Codec.autoDecode(src.data, src.width, src.height, pw);
+        var kept = null;
+        if (out.kind === 'file') {
+          kept = safeName(out.name);
+          it.blob = new Blob([out.bytes], { type: 'application/octet-stream' });
+          it.outName = kept || unmixName(it.name);
+          it.msg = '还原原文件 · ' + human(it.blob.size);
+        } else {
+          it.outName = unmixName(it.name);
+          it.msg = src.width + 'x' + src.height + ' -> ' + out.width + 'x' + out.height;
+        }
+        return sleep(0).then(function () {
+          if (out.kind === 'file') return;
+          return toPng(out.data, out.width, out.height).then(function (b) { it.blob = b; });
+        });
+      });
+    });
+  }
+  function workOne(it, pw, flatten, alg) {
+    if (mode !== 'mix') return unmix(it, pw);
+    if (alg === 1) return mixPixels(it, pw, flatten);
+    return mixFile(it, pw);
+  }
+  async function run() {
+    if (running) { stopFlag = true; return; }
+    var todo = items.filter(function (it) { return it.status !== 'done'; });
+    if (!todo.length) return;
+    running = true; stopFlag = false; updateBtns(); setStat();
+    var pw = els.pw.value, flatten = els.flat.checked, alg = (els.alg.value === '1' ? 1 : 2), ok = 0, bad = 0;
+    for (var i = 0; i < todo.length; i++) {
+      if (stopFlag) break;
+      var it = todo[i];
+      it.status = 'work'; updateRow(it); setStat();
+      await sleep(0);
+      try {
+        await workOne(it, pw, flatten, alg);
+        it.status = 'done'; ok++;
+      } catch (e) {
+        it.status = 'fail'; bad++;
+        it.msg = (e && e.message) ? e.message : String(e);
+      }
+      updateRow(it); setStat();
+      await sleep(0);
+    }
+    running = false; updateBtns();
+    setStat('本批完成：成功 ' + ok + ' 张' + (bad ? '，失败 ' + bad + ' 张' : '') + (stopFlag ? '（已手动停止）' : ''));
+  }
+  function buildZip() {
+    var files = [], total = 0;
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i];
+      if (it.status === 'done' && it.blob) { files.push({ name: it.outName, blob: it.blob }); total += it.blob.size; }
+    }
+    if (!files.length) return;
+    if (total > 900 * 1024 * 1024) { alert('待打包的数据太大（' + human(total) + '），请单张下载，避免浏览器内存不足。'); return; }
+    setStat('正在打包 ' + files.length + ' 个文件…');
+    var self = this;
+    setTimeout(function () {
+      Promise.all(files.map(function (f) {
+        return f.blob.arrayBuffer().then(function (ab) { return { name: f.name, data: new Uint8Array(ab) }; });
+      })).then(function (arr) {
+        var names = ZipWriter.zipNames(arr.map(function (a) { return a.name; }));
+        for (var k = 0; k < arr.length; k++) arr[k].name = names[k];
+        var blob = ZipWriter.build(arr);
+        var base = (mode === 'mix' ? '已混淆' : '已还原');
+        save(blob, base + '_' + arr.length + '张_' + stamp() + '.zip');
+        setStat('已打包 ' + arr.length + ' 张（' + human(blob.size) + '）');
+      }).catch(function (e) {
+        setStat('打包失败：' + (e && e.message ? e.message : e));
+      });
+    }, 30);
+  }
+  function entriesFromDataTransfer(dt) {
+    var out = [], itemsList = dt.items;
+    if (!itemsList || !itemsList.length) return null;
+    var entries = [];
+    for (var i = 0; i < itemsList.length; i++) {
+      var it = itemsList[i];
+      if (it.kind !== 'file') continue;
+      var e = it.webkitGetAsEntry ? it.webkitGetAsEntry() : null;
+      if (e) entries.push(e);
+    }
+    return entries.length ? entries : null;
+  }
+  function readEntries(reader) {
+    return new Promise(function (res, rej) {
+      var all = [];
+      (function step() {
+        reader.readEntries(function (batch) {
+          if (!batch.length) return res(all);
+          for (var i = 0; i < batch.length; i++) all.push(batch[i]);
+          step();
+        }, rej);
+      })();
+    });
+  }
+  function walkEntry(entry, acc) {
+    return new Promise(function (res) {
+      if (!entry) return res(acc);
+      if (entry.isFile) {
+        entry.file(function (f) { acc.push(f); res(acc); }, function () { res(acc); });
+      } else if (entry.isDirectory) {
+        readEntries(entry.createReader())
+          .then(function (kids) {
+            var chain = Promise.resolve(acc);
+            kids.forEach(function (k) { chain = chain.then(function (a) { return walkEntry(k, a); }); });
+            return chain;
+          })
+          .then(function (a) { res(a); })
+          .catch(function () { res(acc); });
+      } else { res(acc); }
+    });
+  }
+  function bind() {
+    els.tabMix = $('tabMix'); els.tabUn = $('tabUn');
+    els.pw = $('pw'); els.eye = $('eye'); els.pwhint = $('pwhint');
+    els.drop = $('drop'); els.file = $('file'); els.dir = $('dir');
+    els.flat = $('flat'); els.keepw = $('keepw');
+    els.savedir = $('savedir');
+    if (els.savedir && !fsaOk()) {
+      els.savedir.disabled = true; els.savedir.checked = false;
+      if (els.savedir.parentNode) els.savedir.parentNode.style.opacity = '.45';
+    }
+    els.alg = $('alg'); els.alghint = $('alghint'); els.algcard = $('algcard');
+    els.list = $('list'); els.prog = $('prog'); els.stat = $('stat');
+    els.start = $('start'); els.zipbtn = $('zipbtn'); els.clear = $('clear');
+    els.subdrop = $('subdrop');
+    function algHint() {
+      var pix = els.alg.value === '1';
+      if (mode !== 'mix') {
+        els.alghint.textContent = '还原时会自动识别算法，这里不用选。';
+      } else {
+        els.alghint.textContent = '标准 · 原文件封装：还原得到原文件本身（逐字节一致），体积约为原文件的 1.2 倍，混淆图尺寸比原图小。\n彻底 · 全图打散：把原图像素整体打散重排，还原得到图片，混淆图与原图等尺寸，体积会膨胀到原图的数倍（最高约 25 倍）。';
+      }
+      var useFlat = (mode === 'mix') && pix;
+      els.flat.disabled = !useFlat;
+      els.flat.parentNode.style.opacity = useFlat ? '1' : '.45';
+      els.keepw.parentNode.style.opacity = mode === 'mix' ? '1' : '.45';
+    }
+    els.alg.onchange = algHint;
+    function setMode(m) {
+      mode = m;
+      els.tabMix.className = m === 'mix' ? 'on' : '';
+      els.tabUn.className = m === 'un' ? 'on' : '';
+      els.start.className = 'btn primary';
+      els.alg.disabled = m !== 'mix';
+      algHint();
+      for (var i = 0; i < items.length; i++) { var it = items[i]; it.status = 'wait'; it.blob = null; it.msg = human(it.size); }
+      renderList(); setStat();
+    }
+    els.tabMix.onclick = function () { setMode('mix'); };
+    els.tabUn.onclick = function () { setMode('un'); };
+    function pwHint() {
+      els.pwhint.textContent = els.pw.value
+        ? '密码不保存在任何地方，忘记就还原不了；混淆和还原必须用同一个密码。'
+        : '当前为「默认密钥」：任何人有本工具都能还原，只适合防随手翻看。';
+    }
+    els.pw.oninput = pwHint; pwHint();
+    els.eye.onclick = function () {
+      var show = els.pw.type === "password";
+      els.pw.type = show ? "text" : "password";
+      els.eye.textContent = show ? "隐藏" : "显示";
+      els.pw.focus();
+    };
+    els.drop.onclick = function () { els.file.click(); };
+    els.file.onchange = function () { addFiles(els.file.files); els.file.value = ''; };
+    if ('webkitdirectory' in document.createElement('input')) {
+      els.subdrop.innerHTML = '或把图片 / 文件夹拖到这里 · <u>选文件夹</u>';
+      els.subdrop.querySelector('u').onclick = function (ev) { ev.stopPropagation(); els.dir.click(); };
+      els.dir.onchange = function () { addFiles(els.dir.files); els.dir.value = ''; };
+    } else {
+      els.subdrop.textContent = '或把图片拖到这里（手机请点上面选择）';
+    }
+    document.addEventListener("dragover", function (e) { e.preventDefault(); els.drop.classList.add("over"); });
+    document.addEventListener("dragleave", function (e) { if (!e.relatedTarget) els.drop.classList.remove("over"); });
+    document.addEventListener("drop", function (e) {
+      e.preventDefault();
+      els.drop.classList.remove("over");
+      var dt = e.dataTransfer;
+      if (!dt) return;
+      var ents = null;
+      try { ents = entriesFromDataTransfer(dt); } catch (x) { ents = null; }
+      var needWalk = false;
+      if (ents) {
+        for (var k = 0; k < ents.length; k++) { if (ents[k] && ents[k].isDirectory) needWalk = true; }
+      }
+      if (!needWalk && dt.files && dt.files.length) { addFiles(dt.files); return; }
+      if (!ents) return;
+      setStat("正在读取文件夹…");
+      var acc = [];
+      var chain = Promise.resolve(acc);
+      ents.forEach(function (en) { chain = chain.then(function (x) { return walkEntry(en, x); }); });
+      chain.then(function (x) { if (!addFiles(x)) setStat("拖入的内容里没有可用的图片"); })
+           .catch(function (err) { setStat("读取失败：" + (err && err.message ? err.message : err)); });
+    });
+    document.addEventListener('paste', function (e) {
+      var dt = e.clipboardData; if (!dt || !dt.files || !dt.files.length) return;
+      addFiles(dt.files);
+    });
+    els.start.onclick = function () {
+      if (running) { stopFlag = true; setStat('正在停止…'); return; }
+      if (!items.length) { els.file.click(); return; }
+      run();
+    };
+    els.zipbtn.onclick = function () { ensureDir(); buildZip(); };
+    els.clear.onclick = function () {
+      items = []; els.list.innerHTML = ''; els.prog.style.width = '0'; setStat();
+    };
+    algHint();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);
+  else bind();
+})();
+
+</script>
+</body>
+</html>
