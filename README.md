@@ -1,5 +1,7 @@
 # Image Obfuscator · 图片混淆器
 
+[中文说明 →](README.zh.md)
+
 **Share a scrambled PNG instead of the picture you don't want to show.** Mix one image or a
 whole folder into noise, send that, and restore the originals later with the same password.
 
