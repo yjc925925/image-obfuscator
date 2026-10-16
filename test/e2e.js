@@ -6,6 +6,12 @@
   }
   function q(s) { return document.querySelector(s); }
   function qa(s) { return document.querySelectorAll(s); }
+  window.__dn = window.__dn || 0;
+  if (!window.__dnPatched) {
+    window.__dnPatched = true;
+    var _oc = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function () { window.__dn++; return _oc.apply(this, arguments); };
+  }
   function tick(ms) { return new Promise(function (r) { setTimeout(r, ms || 0); }); }
   function statText() { return (document.getElementById('stat').textContent || '').trim(); }
   function waitStat(prefix, ms) {
@@ -274,6 +280,35 @@
     chk('跑完后删除按钮恢复', delNow.disabled === false, 'disabled=' + delNow.disabled);
     chk('跑完后预览按钮恢复', pvNow.disabled === false, 'disabled=' + pvNow.disabled);
     chk('删除测试后混淆仍成功', s4.indexOf('成功 1 张') >= 0, s4);
+    document.getElementById('clear').click(); await tick(60);
+    feed(file1); feed(file1); feed(file1);
+    await tick(500);
+    document.getElementById('start').click();
+    var s8 = await waitStat('本批完成', 30000);
+    chk('勾选测试：三张混淆完成', s8.indexOf('成功 3 张') >= 0, s8);
+    var pickBoxes = qa('#list li.row input.pick');
+    chk('每行都有勾选框', pickBoxes.length === 3 && pickBoxes[0].type === 'checkbox', String(pickBoxes.length));
+    chk('新加入的默认勾选', pickBoxes[0].checked && pickBoxes[1].checked && pickBoxes[2].checked, '');
+    var allBox2 = document.getElementById('pickall');
+    chk('有全选勾选框', !!allBox2 && allBox2.checked === true, '');
+    var btnDl = document.getElementById('dlsel'), btnDel2 = document.getElementById('delsel');
+    chk('有一键下载与一键删除按钮', !!btnDl && !!btnDel2 && btnDl.textContent === '一键下载' && btnDel2.textContent === '一键删除',
+      (btnDl ? btnDl.textContent : '-') + ' / ' + (btnDel2 ? btnDel2.textContent : '-'));
+    chk('已勾选数量提示', (document.getElementById('selinfo').textContent || '').indexOf('3 / 3') >= 0, document.getElementById('selinfo').textContent);
+    allBox2.checked = false; allBox2.dispatchEvent(new Event('change', { bubbles: true })); await tick(80);
+    chk('取消全选后一行都没勾', qa('#list li.row input.pick:checked').length === 0, String(qa('#list li.row input.pick:checked').length));
+    chk('没勾选时两个按钮禁用', btnDl.disabled === true && btnDel2.disabled === true, btnDl.disabled + '/' + btnDel2.disabled);
+    pickBoxes[0].click(); pickBoxes[1].click(); await tick(120);
+    chk('勾选两张后按钮可用', btnDl.disabled === false && btnDel2.disabled === false, btnDl.disabled + '/' + btnDel2.disabled);
+    chk('勾选两张的提示', (document.getElementById('selinfo').textContent || '').indexOf('2 / 3') >= 0, document.getElementById('selinfo').textContent);
+    var sd2 = document.getElementById('savedir'); if (sd2 && !sd2.disabled) sd2.checked = false;
+    var dnBefore = window.__dn;
+    btnDl.click(); await tick(700);
+    chk('一键下载只下载勾选的两张', window.__dn - dnBefore === 2, '下载 ' + (window.__dn - dnBefore) + ' 次');
+    btnDel2.click(); await tick(250);
+    chk('一键删除只删勾选的两张', qa('#list li.row').length === 1, '剩 ' + qa('#list li.row').length);
+    chk('一键删除后状态更新', statText().indexOf('共 1 张') === 0, statText());
+    document.getElementById('clear').click(); await tick(60);
   } catch (e) {
     chk('脚本异常', false, (e && e.message) || String(e));
   }

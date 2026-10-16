@@ -2,7 +2,7 @@ import path from "node:path";
 const PORT = process.argv[2] || "9337";
 const BASE = "http://127.0.0.1:" + PORT;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const t = await (await fetch(BASE + "/json/new?" + encodeURIComponent("https://yjc925925.github.io/img-mixer/"), { method: "PUT" })).json();
+const t = await (await fetch(BASE + "/json/new?" + encodeURIComponent("https://yjc925925.github.io/image-obfuscator/"), { method: "PUT" })).json();
 const ws = new WebSocket(t.webSocketDebuggerUrl);
 await new Promise((res, rej) => { ws.onopen = res; ws.onerror = () => rej(new Error("ws")); });
 let id = 0; const pend = new Map();
@@ -18,6 +18,7 @@ const expr = `(async function () {
   chk('脚本数 5', document.querySelectorAll('script').length === 5, String(document.querySelectorAll('script').length));
   chk('核心对象就位', typeof Codec === 'object' && typeof HashCore === 'object' && typeof ZipWriter === 'object', typeof Codec + '/' + typeof HashCore + '/' + typeof ZipWriter);
   chk('算法选择器', document.getElementById('alg') && document.getElementById('alg').value === '2', '');
+  chk('勾选与一键按钮', !!document.getElementById('pickall') && !!document.getElementById('dlsel') && !!document.getElementById('delsel') && document.getElementById('dlsel').textContent === '一键下载', '');
   var W = 30, H = 20;
   var cv = document.createElement('canvas'); cv.width = W; cv.height = H;
   var g = cv.getContext('2d', { willReadFrequently: true }); var d = g.createImageData(W, H);

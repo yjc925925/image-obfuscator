@@ -114,7 +114,7 @@
       if (els.keepw.checked && !isImage(f)) continue;
       items.push({
         id: autoId++, file: f, name: f.name || ('image_' + autoId + '.bin'),
-        size: f.size || 0, status: 'wait', msg: human(f.size || 0), blob: null, outName: ''
+        size: f.size || 0, status: 'wait', msg: human(f.size || 0), blob: null, outName: '', pick: true
       });
       n++;
     }
@@ -187,6 +187,9 @@
   function rowFor(it) {
     var li = document.createElement('li');
     li.className = 'row'; li.id = 'r' + it.id;
+    var pick = document.createElement('input');
+    pick.type = 'checkbox'; pick.className = 'pick'; pick.checked = it.pick !== false;
+    pick.onclick = function (ev) { ev.stopPropagation(); it.pick = pick.checked; updateBtns(); };
     var info = document.createElement('div'); info.className = 'info';
     var nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = it.name;
     var mt = document.createElement('div'); mt.className = 'mt'; mt.textContent = it.msg;
@@ -196,10 +199,49 @@
     pv.onclick = function (ev) { ev.stopPropagation(); openPreview(it); };
     var del = document.createElement('button'); del.type = 'button'; del.className = 'del'; del.textContent = '删除';
     del.onclick = function (ev) { ev.stopPropagation(); removeItem(it); };
-    li.appendChild(info); li.appendChild(chip); li.appendChild(pv); li.appendChild(del);
-    it._del = del; it._pv = pv;
+    li.appendChild(pick); li.appendChild(info); li.appendChild(chip); li.appendChild(pv); li.appendChild(del);
+    it._del = del; it._pv = pv; it._pick = pick;
     it._chip = chip; it._mt = mt;
     return li;
+  }
+
+  function picked() {
+    var out = [];
+    for (var i = 0; i < items.length; i++) if (items[i].pick !== false) out.push(items[i]);
+    return out;
+  }
+
+  function dlSelected() {
+    var sel = picked(), list = [], i;
+    for (i = 0; i < sel.length; i++) if (sel[i].status === 'done' && sel[i].blob) list.push(sel[i]);
+    if (!list.length) { setStat('勾选的结果还没处理完，先点「开始」'); return; }
+    var total = list.length;
+    if (!wantDir()) {
+      list.forEach(function (it, k) { setTimeout(function () { download(it.blob, it.outName); }, k * 120); });
+      setStat('已发起下载 ' + total + ' 张' + (total > 1 ? '（浏览器可能会问是否允许下载多个文件；勾「保存到文件夹」可一次存到指定目录）' : ''));
+      return;
+    }
+    var got = 0;
+    setStat('正在保存 0 / ' + total + ' 张…');
+    var chain = Promise.resolve();
+    list.forEach(function (it) {
+      chain = chain.then(function () {
+        return save(it.blob, it.outName).then(function () {
+          got++;
+          setStat('正在保存 ' + got + ' / ' + total + ' 张…');
+        });
+      });
+    });
+    chain.then(function () { setStat('已保存 ' + got + ' / ' + total + ' 张'); });
+  }
+
+  function delSelected() {
+    if (running) return;
+    var sel = picked();
+    if (!sel.length) return;
+    if (sel.length >= items.length) { items = []; els.list.innerHTML = ''; els.prog.style.width = '0'; setStat(); return; }
+    for (var i = 0; i < sel.length; i++) removeItem(sel[i]);
+    setStat();
   }
 
   function removeItem(it) {
@@ -263,7 +305,17 @@
     for (var i = 0; i < items.length; i++) {
       if (items[i].status === 'done') done++; else left++;
     }
-    for (var q = 0; q < items.length; q++) { if (items[q]._pv) items[q]._pv.disabled = running || items[q].status !== 'done'; }
+    var selN = 0, selDone = 0;
+    for (var q = 0; q < items.length; q++) {
+      if (items[q]._pv) items[q]._pv.disabled = running || items[q].status !== 'done';
+      if (items[q]._pick) items[q]._pick.disabled = running;
+      if (items[q].pick !== false) { selN++; if (items[q].status === 'done' && items[q].blob) selDone++; }
+    }
+    if (els.selline) els.selline.hidden = !items.length;
+    if (els.pickall) { els.pickall.disabled = running || !items.length; els.pickall.checked = items.length > 0 && selN === items.length; }
+    if (els.selinfo) els.selinfo.textContent = items.length ? ('已勾选 ' + selN + ' / ' + items.length + ' 张') : '';
+    if (els.dlsel) els.dlsel.disabled = running || !selDone;
+    if (els.delsel) els.delsel.disabled = running || !selN;
     els.zipbtn.disabled = !done;
     els.start.disabled = running || !left;
     els.start.textContent = running ? '处理中…（点我停止）' : (mode === 'mix' ? '开始混淆' : '开始还原');
@@ -436,6 +488,8 @@
     els.alg = $('alg'); els.alghint = $('alghint'); els.algcard = $('algcard');
     els.list = $('list'); els.prog = $('prog'); els.stat = $('stat');
     els.start = $('start'); els.zipbtn = $('zipbtn'); els.clear = $('clear');
+    els.dlsel = $('dlsel'); els.delsel = $('delsel'); els.pickall = $('pickall');
+    els.selinfo = $('selinfo'); els.selline = $('selline');
     els.subdrop = $('subdrop');
 
     function algHint() {
@@ -522,6 +576,13 @@
       run();
     };
     els.zipbtn.onclick = function () { ensureDir(); buildZip(); };
+    els.dlsel.onclick = function () { dlSelected(); };
+    els.delsel.onclick = function () { delSelected(); };
+    els.pickall.onchange = function () {
+      var on = els.pickall.checked;
+      for (var i = 0; i < items.length; i++) { items[i].pick = on; if (items[i]._pick) items[i]._pick.checked = on; }
+      updateBtns();
+    };
     els.clear.onclick = function () {
       items = []; els.list.innerHTML = ''; els.prog.style.width = '0'; setStat();
     };

@@ -20,12 +20,12 @@ if (/<script[^>]*\ssrc=/i.test(html)) throw new Error("还有外链脚本");
 if (/<link[^>]*\shref=/i.test(html)) throw new Error("还有外链样式");
 if (/<!--/.test(html)) throw new Error("还有 HTML 注释");
 
-// Two names for the same bytes at the repo root: index.html is what GitHub Pages
-// serves and what a download lands as; the Chinese name is what a Chinese-speaking
-// user actually looks for in their downloads folder.
 const bytes = Buffer.byteLength(html, "utf8");
 for (const name of ["index.html", "图片混淆器.html"]) {
   fs.writeFileSync(path.join(here, name), html, "utf8");
   console.log(name + "  " + bytes + " 字节");
 }
+fs.mkdirSync(path.join(here, "dist"), { recursive: true });
+fs.writeFileSync(path.join(here, "dist", "图片混淆器.html"), html, "utf8");
+fs.writeFileSync(path.join(here, "dist", "img-mixer.html"), html, "utf8");
 console.log("内联 " + out.join(" / "));

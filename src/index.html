@@ -39,18 +39,24 @@ input:focus,select:focus{outline:0;border-color:var(--acc)}
 .grid input[type=checkbox]{width:18px;height:18px;accent-color:var(--acc);flex:none}
 ul#list{list-style:none;margin:0 0 10px;padding:0}
 li.row{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);padding:10px 12px;margin-bottom:7px}
-li.row .info{flex:1;min-width:0}
+li.row .info{order:2;flex:1;min-width:0}
+li.row .pick{order:1;width:18px;height:18px;accent-color:var(--acc);flex:none;cursor:pointer;margin:0}
+li.row .pick:disabled{cursor:default;opacity:.45}
+.selline{display:flex;align-items:center;gap:8px;padding:0 2px 8px;font-size:13px;color:var(--dim)}
+.selline[hidden]{display:none}
+.selline input{width:18px;height:18px;accent-color:var(--acc);flex:none;cursor:pointer;margin:0}
+.selline span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 li.row .nm{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 li.row .mt{font-size:11.5px;color:var(--dim);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.chip{font-size:11.5px;padding:3px 8px;flex:none;border:1px solid var(--line);color:var(--dim);white-space:nowrap}
+.chip{order:3;font-size:11.5px;padding:3px 8px;flex:none;border:1px solid var(--line);color:var(--dim);white-space:nowrap}
 .chip.work{color:var(--warn);border-color:#5a4520;background:#241d0e}
 .chip.done{color:var(--ok);border-color:#1d5340;background:#0f241c}
 .chip.fail{color:var(--bad);border-color:#5c2027;background:#241114}
-.dl{order:4;flex:none;background:var(--card2);border:1px solid var(--line);color:var(--acc);padding:6px 10px;font-size:12.5px;cursor:pointer;text-decoration:none;font-family:inherit}
-li.row .del{order:5;flex:none;background:transparent;border:1px solid var(--line);color:var(--dim);padding:6px 10px;font-size:12.5px;cursor:pointer;font-family:inherit}
+.dl{order:5;flex:none;background:var(--card2);border:1px solid var(--line);color:var(--acc);padding:6px 10px;font-size:12.5px;cursor:pointer;text-decoration:none;font-family:inherit}
+li.row .del{order:6;flex:none;background:transparent;border:1px solid var(--line);color:var(--dim);padding:6px 10px;font-size:12.5px;cursor:pointer;font-family:inherit}
 li.row .del:hover{color:var(--bad);border-color:#5c2027;background:#241114}
 li.row .del:disabled{opacity:.4;cursor:default}
-li.row .pv{order:3;flex:none;background:transparent;border:1px solid var(--line);color:var(--dim);padding:6px 10px;font-size:12.5px;cursor:pointer;font-family:inherit}
+li.row .pv{order:4;flex:none;background:transparent;border:1px solid var(--line);color:var(--dim);padding:6px 10px;font-size:12.5px;cursor:pointer;font-family:inherit}
 li.row .pv:hover{color:var(--acc);border-color:#274a6e;background:#12202e}
 li.row .pv:disabled{opacity:.4;cursor:default}
 #pv{display:none;position:fixed;inset:0;z-index:60;background:#0b0e12;flex-direction:column}
@@ -118,6 +124,7 @@ footer{position:sticky;bottom:0;z-index:20;background:var(--bg);border-top:1px s
     <div class="card"><input type="checkbox" id="keepw"><label for="keepw">忽略非图片文件<br><span class="hint" style="margin:0">文件夹里挑图片</span></label></div>
   </div>
 
+  <div class="selline" id="selline" hidden><input type="checkbox" id="pickall" checked><label for="pickall">全选</label><span id="selinfo"></span></div>
   <ul id="list"></ul>
 
 </main>
@@ -129,6 +136,8 @@ footer{position:sticky;bottom:0;z-index:20;background:var(--bg);border-top:1px s
     <div class="btns">
       <button class="btn primary" id="start">开始混淆</button>
       <button class="btn small" id="zipbtn" disabled>打包 ZIP</button>
+      <button class="btn small" id="dlsel" disabled>一键下载</button>
+      <button class="btn small" id="delsel" disabled>一键删除</button>
       <button class="btn small" id="clear">清空</button>
     </div>
   </div>

@@ -22,6 +22,8 @@ leaves the browser.
 5. Press **开始混淆 / 开始还原**.
 6. Download one by one, or hit **打包 ZIP** to take them all at once (one save dialog instead of
    many — recommended on phones).
+7. Every row in the result list has a checkbox (all ticked by default, with a **全选** toggle
+   above the list): **一键下载** saves the ticked rows, **一键删除** drops them.
 
 Restore auto-detects which algorithm produced a file, so there is nothing to choose. A file
 named `photo.jpg` comes back as `photo.mix.png`; restoring strips the `.mix` and returns
