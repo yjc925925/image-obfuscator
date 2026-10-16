@@ -149,7 +149,7 @@ ASCII, and non-ASCII passwords, byte-for-byte file round-trips, wrong-password r
 auto-detection of both algorithms, and rejection of a foreign PNG.
 
 Verification performed on this release: **0 external URLs, 0 `fetch`/`XHR`/`WebSocket` calls, 0
-`eval`/`new Function`/`document.write`, 0 inline event handlers, all 18 smoke checks passing, and
+`eval`/`new Function`/`document.write`, 0 inline event handlers, all 19 smoke checks passing, and
 the page rendering correctly in a headless browser.**
 
 ---
