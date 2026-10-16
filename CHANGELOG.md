@@ -28,6 +28,7 @@ published as v1.0.1.
 - `index.html` and `图片混淆器.html` at the repository root: the same 50,901 bytes under an English
   and a Chinese name. GitHub Pages serves `index.html`, which also makes the project directly
   playable from the repository page.
+- `docs/img-mixer-notes.md` — the retired repository's README, archived for its Chinese guide.
 
 ### Changed
 

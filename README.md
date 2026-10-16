@@ -132,6 +132,9 @@ test/                test suites
   core2.mjs          standard-codec assertions (Node, 177 checks)
   browser.mjs        in-browser self-check via CDP (22 checks)
   ui.mjs             real end-to-end UI run (75 checks)
+docs/
+  screenshot.png     the screenshot above
+  img-mixer-notes.md the original Chinese guide, archived from the retired repo
 build.mjs            inlines src/ into the single-file app
 ```
 
