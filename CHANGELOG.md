@@ -127,3 +127,4 @@ First public release. Single-file, zero-dependency, offline image obfuscator.
 [1.0.0]: https://github.com/yjc925925/image-obfuscator/releases/tag/v1.0.0
 [1.0.1]: https://github.com/yjc925925/image-obfuscator/releases/tag/v1.0.1
 [1.1.0]: https://github.com/yjc925925/image-obfuscator/releases/tag/v1.1.0
+[1.2.0]: https://github.com/yjc925925/image-obfuscator/releases/tag/v1.2.0
