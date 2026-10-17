@@ -4,6 +4,27 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-10-17
+
+### Added
+
+- **ZIP import.** Drop a `.zip` on the page (or pick it with **选 ZIP**) and the images inside are
+  extracted in the browser, so nothing has to be unzipped on a phone. `src/unzip.js` reads the
+  central directory itself and inflates entries with `DecompressionStream('deflate-raw')`; stored
+  entries are copied as-is. Password-protected archives are refused with a readable message, nested
+  folders are flattened, non-image entries are skipped, and one broken entry never fails the batch.
+- Per-row checkboxes in the result list, with a **全选** toggle and **一键下载 / 一键删除** buttons
+  that only act on the ticked rows.
+- `test/unzip.mjs` (14 checks) — hand-built archives (stored, deflated, encrypted, truncated, empty,
+  unsupported method) asserted without touching the network.
+
+### Changed
+
+- The build now inlines six modules (`unzip.js` added) and refuses to write output unless it finds
+  exactly six inlined scripts.
+- `test/e2e.js` grew to 94 checks: ZIP import through both the drop path and the file picker, the
+  latter with a deflate-compressed archive built in-page so the inflate branch is exercised.
+
 ## [1.1.0] - 2026-10-16
 
 The repository now holds the project rather than only its output: the full source tree, the test

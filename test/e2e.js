@@ -58,7 +58,7 @@
     var g3 = [typeof Codec, typeof HashCore, typeof ZipWriter].join(',');
     chk('全局对象齐备', g3 === 'object,object,object', g3);
     chk('无内部测试钩子', typeof window.IMX === 'undefined', String(typeof window.IMX));
-    chk('脚本数 5', qa('script').length === 5, String(qa('script').length));
+    chk('脚本数 6', qa('script').length === 6, String(qa('script').length));
     chk('无预览浮层残留', document.getElementById('pv').className === '' && !document.getElementById('pvimg').getAttribute('src'), document.getElementById('pv').className);
     chk('无外链资源', qa('script[src],link[href],img[src],iframe[src]').length === 0, String(qa('script[src],link[href],img[src],iframe[src]').length));
     chk('无说明板块', qa('details').length === 0 && document.documentElement.outerHTML.indexOf('使用说明') < 0, String(qa('details').length));
@@ -308,6 +308,69 @@
     btnDel2.click(); await tick(250);
     chk('一键删除只删勾选的两张', qa('#list li.row').length === 1, '剩 ' + qa('#list li.row').length);
     chk('一键删除后状态更新', statText().indexOf('共 1 张') === 0, statText());
+    document.getElementById('clear').click(); await tick(60);
+    document.getElementById('clear').click(); await tick(60);
+
+    function pngBytes(w, h, color) {
+      var cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+      var g = cv.getContext('2d'); g.fillStyle = color; g.fillRect(0, 0, w, h);
+      return new Promise(function (r) {
+        cv.toBlob(function (b) { b.arrayBuffer().then(function (ab) { r(new Uint8Array(ab)); }); }, 'image/png');
+      });
+    }
+    function zipOneDeflated(name, raw, comp) {
+      var nm = HashCore.utf8(name), crc = ZipWriter.crc32(raw);
+      var lh = new Uint8Array(30 + nm.length + comp.length), dv = new DataView(lh.buffer);
+      dv.setUint32(0, 0x04034b50, true); dv.setUint16(4, 20, true); dv.setUint16(6, 0x800, true);
+      dv.setUint16(8, 8, true); dv.setUint32(14, crc, true); dv.setUint32(18, comp.length, true);
+      dv.setUint32(22, raw.length, true); dv.setUint16(26, nm.length, true);
+      lh.set(nm, 30); lh.set(comp, 30 + nm.length);
+      var cd = new Uint8Array(46 + nm.length), d2 = new DataView(cd.buffer);
+      d2.setUint32(0, 0x02014b50, true); d2.setUint16(4, 20, true); d2.setUint16(6, 20, true);
+      d2.setUint16(8, 0x800, true); d2.setUint16(10, 8, true);
+      d2.setUint32(16, crc, true); d2.setUint32(20, comp.length, true); d2.setUint32(24, raw.length, true);
+      d2.setUint16(28, nm.length, true);
+      cd.set(nm, 46);
+      var eo = new Uint8Array(22), d3 = new DataView(eo.buffer);
+      d3.setUint32(0, 0x06054b50, true); d3.setUint16(8, 1, true); d3.setUint16(10, 1, true);
+      d3.setUint32(12, cd.length, true); d3.setUint32(16, lh.length, true);
+      var all = new Uint8Array(lh.length + cd.length + 22);
+      all.set(lh, 0); all.set(cd, lh.length); all.set(eo, lh.length + cd.length);
+      return all;
+    }
+    async function waitRows(n, ms) {
+      var t0 = Date.now();
+      while (qa('#list li.row').length < n && Date.now() - t0 < (ms || 9000)) await tick(100);
+      return qa('#list li.row').length;
+    }
+
+    chk('拖动区提示提到 ZIP', (document.getElementById('subdrop').textContent || '').indexOf('ZIP') >= 0, document.getElementById('subdrop').textContent);
+    var zA = await pngBytes(24, 16, '#38a'), zB = await pngBytes(18, 12, '#a83');
+    var zBlob = ZipWriter.build([{ name: '照片一.png', data: zA }, { name: '子目录/照片二.png', data: zB }]);
+    drop(new File([zBlob], '打包好了.zip', { type: 'application/zip' }));
+    var zN = await waitRows(2);
+    chk('拖入 ZIP 自动取出里面的图片', zN === 2, '取出 ' + zN + ' 张');
+    var nmAll = qa('#list li.row .nm');
+    chk('ZIP 里的文件名保留', nmAll.length === 2 && nmAll[0].textContent === '照片一.png' && nmAll[1].textContent === '照片二.png',
+      (nmAll[0] ? nmAll[0].textContent : '-') + ' / ' + (nmAll[1] ? nmAll[1].textContent : '-'));
+    chk('取图有状态提示', statText().indexOf('取出 2 张图片') >= 0, statText());
+
+    if (typeof CompressionStream !== 'undefined') {
+      var zC = await pngBytes(20, 14, '#3a7');
+      var st0 = new Blob([zC]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+      var comp = new Uint8Array(await new Response(st0).arrayBuffer());
+      var dzip = zipOneDeflated('压缩过的.png', zC, comp);
+      document.getElementById('clear').click(); await tick(80);
+      var zin = document.getElementById('zipin');
+      var dt2 = new DataTransfer();
+      dt2.items.add(new File([dzip], '手机压缩.zip', { type: 'application/zip' }));
+      zin.files = dt2.files;
+      zin.dispatchEvent(new Event('change', { bubbles: true }));
+      var zN2 = await waitRows(1);
+      chk('deflate 压缩的 ZIP 也能解', zN2 === 1, '取出 ' + zN2 + ' 张');
+      var nd = q('#list li.row .nm');
+      chk('deflate ZIP 文件名正确', (nd ? nd.textContent : '') === '压缩过的.png', nd ? nd.textContent : '-');
+    }
     document.getElementById('clear').click(); await tick(60);
   } catch (e) {
     chk('脚本异常', false, (e && e.message) || String(e));

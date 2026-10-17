@@ -15,7 +15,7 @@ html = html.replace(/<script\s+src="([^"]+)"\s*><\/script>/gi, (m, f) => {
   out.push(f + " " + code.length + "B");
   return "<script>\n" + tight(stripEmoji(strip(code))) + "\n</script>";
 });
-if (out.length !== 5) throw new Error("内联脚本数 " + out.length + "，应为 5");
+if (out.length !== 6) throw new Error("内联脚本数 " + out.length + "，应为 6");
 if (/<script[^>]*\ssrc=/i.test(html)) throw new Error("还有外链脚本");
 if (/<link[^>]*\shref=/i.test(html)) throw new Error("还有外链样式");
 if (/<!--/.test(html)) throw new Error("还有 HTML 注释");

@@ -106,11 +106,28 @@
     setTimeout(function () { URL.revokeObjectURL(url); if (a.parentNode) a.parentNode.removeChild(a); }, 8000);
   }
 
-  function addFiles(list) {
+  var zipQueue = [], zipBusy = false, zipOpen = 0;
+
+  function mimeOf(name) {
+    var e = String(name).split('.').pop().toLowerCase();
+    if (e === 'png') return 'image/png';
+    if (e === 'jpg' || e === 'jpeg') return 'image/jpeg';
+    if (e === 'webp') return 'image/webp';
+    if (e === 'gif') return 'image/gif';
+    if (e === 'bmp') return 'image/bmp';
+    return '';
+  }
+
+  function isZipFile(f) {
+    return typeof Unzip !== 'undefined' && Unzip.isZip(f);
+  }
+
+  function pushFiles(list) {
     var n = 0;
     for (var i = 0; i < list.length; i++) {
       var f = list[i];
       if (!f) continue;
+      if (isZipFile(f)) { zipQueue.push(f); continue; }
       if (els.keepw.checked && !isImage(f)) continue;
       items.push({
         id: autoId++, file: f, name: f.name || ('image_' + autoId + '.bin'),
@@ -118,7 +135,39 @@
       });
       n++;
     }
+    return n;
+  }
+
+  function drainZips() {
+    if (zipBusy) return;
+    zipBusy = true;
+    (function step() {
+      var f = zipQueue.shift();
+      if (!f) { zipBusy = false; return; }
+      zipOpen++;
+      if (zipOpen > 8) { zipQueue.length = 0; zipBusy = false; zipOpen = 0; setStat('压缩包套得太深，请先自己解压一遍'); return; }
+      setStat('正在解开 ' + f.name + ' …');
+      Unzip.read(f).then(function (ents) {
+        zipOpen--;
+        if (!ents.length) { setStat(f.name + ' 里没有找到图片'); return step(); }
+        var files = [], i;
+        for (i = 0; i < ents.length; i++) files.push(new File([ents[i].bytes], ents[i].name, { type: mimeOf(ents[i].name) }));
+        var n = pushFiles(files);
+        if (n) renderList();
+        setStat('从 ' + f.name + ' 里取出 ' + (n || ents.length) + ' 张图片');
+        step();
+      }, function (err) {
+        zipOpen--;
+        setStat('压缩包打不开：' + (err && err.message ? err.message : err));
+        step();
+      });
+    })();
+  }
+
+  function addFiles(list) {
+    var n = pushFiles(list);
     if (n) { renderList(); setStat(); }
+    if (zipQueue.length) { drainZips(); return n + 1; }
     return n;
   }
 
@@ -490,7 +539,10 @@
     els.start = $('start'); els.zipbtn = $('zipbtn'); els.clear = $('clear');
     els.dlsel = $('dlsel'); els.delsel = $('delsel'); els.pickall = $('pickall');
     els.selinfo = $('selinfo'); els.selline = $('selline');
-    els.subdrop = $('subdrop');
+    els.subdrop = $('subdrop'); els.zipin = $('zipin');
+    if (els.zipin) {
+      els.zipin.onchange = function () { addFiles(els.zipin.files); els.zipin.value = ''; };
+    }
 
     function algHint() {
       var pix = els.alg.value === '1';
@@ -534,13 +586,16 @@
 
     els.drop.onclick = function () { els.file.click(); };
     els.file.onchange = function () { addFiles(els.file.files); els.file.value = ''; };
-    if ('webkitdirectory' in document.createElement('input')) {
-      els.subdrop.innerHTML = '或把图片 / 文件夹拖到这里 · <u>选文件夹</u>';
-      els.subdrop.querySelector('u').onclick = function (ev) { ev.stopPropagation(); els.dir.click(); };
+    var canDir = 'webkitdirectory' in document.createElement('input');
+    els.subdrop.innerHTML = '或把图片 / 文件夹 / ZIP 拖到这里' +
+      (canDir ? ' · <u>选文件夹</u>' : '') + ' · <u>选 ZIP</u>';
+    var us = els.subdrop.querySelectorAll('u'), uk = 0;
+    if (canDir) {
+      us[uk].onclick = function (ev) { ev.stopPropagation(); els.dir.click(); };
+      uk++;
       els.dir.onchange = function () { addFiles(els.dir.files); els.dir.value = ''; };
-    } else {
-      els.subdrop.textContent = '或把图片拖到这里（手机请点上面选择）';
     }
+    us[uk].onclick = function (ev) { ev.stopPropagation(); els.zipin.click(); };
 
     document.addEventListener("dragover", function (e) { e.preventDefault(); els.drop.classList.add("over"); });
     document.addEventListener("dragleave", function (e) { if (!e.relatedTarget) els.drop.classList.remove("over"); });

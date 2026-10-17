@@ -117,6 +117,7 @@ footer{position:sticky;bottom:0;z-index:20;background:var(--bg);border-top:1px s
   </div>
   <input type="file" id="file" multiple accept="image/*" hidden>
   <input type="file" id="dir" webkitdirectory directory multiple hidden>
+  <input type="file" id="zipin" accept=".zip,application/zip" multiple hidden>
 
   <div class="grid">
     <div class="card"><input type="checkbox" id="flat" checked><label for="flat">透明区域填白<br><span class="hint" style="margin:0">仅「彻底」需要</span></label></div>
@@ -689,6 +690,91 @@ var ZipWriter = (function () {
 
 </script>
 <script>
+var Unzip = (function () {
+  'use strict';
+  var IMG = /\.(png|jpe?g|webp|gif|bmp|avif)$/i;
+  var MAX_ENTRIES = 4000;
+  function u16(b, o) { return b[o] | (b[o + 1] << 8); }
+  function u32(b, o) { return (b[o] | (b[o + 1] << 8) | (b[o + 2] << 16) | (b[o + 3] << 24)) >>> 0; }
+  function isImageName(n) { return IMG.test(n); }
+  function isZip(file) {
+    if (!file) return false;
+    var t = file.type || '';
+    if (t === 'application/zip' || t === 'application/x-zip-compressed' || t === 'multipart/x-zip') return true;
+    return /\.zip$/i.test(file.name || '');
+  }
+  function utf8(bytes) {
+    try {
+      return new TextDecoder('utf-8').decode(bytes);
+    } catch (e) {
+      var s = '', i;
+      for (i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+      return s;
+    }
+  }
+  function decodeName(bytes, flags) {
+    if (flags & 0x800) return utf8(bytes);
+    var s = utf8(bytes);
+    if (s.indexOf('\uFFFD') < 0) return s;
+    try { return new TextDecoder('gbk').decode(bytes); } catch (e) { return s; }
+  }
+  function baseName(n) {
+    var p = n.lastIndexOf('/');
+    return p < 0 ? n : n.slice(p + 1);
+  }
+  function inflateRaw(bytes) {
+    if (typeof DecompressionStream === 'undefined') {
+      return Promise.reject(new Error('这个浏览器不支持解压，请用较新的 Chrome、Edge 或 Safari'));
+    }
+    var st = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+    return new Response(st).arrayBuffer();
+  }
+  async function read(file) {
+    var buf = new Uint8Array(await file.arrayBuffer());
+    if (buf.length < 22) throw new Error('这不是有效的 ZIP 压缩包');
+    var eocd = -1, i, low = Math.max(0, buf.length - 66000);
+    for (i = buf.length - 22; i >= low; i--) {
+      if (u32(buf, i) === 0x06054b50) { eocd = i; break; }
+    }
+    if (eocd < 0) throw new Error('这不是有效的 ZIP 压缩包，或者文件没有传完整');
+    var count = u16(buf, eocd + 10);
+    if (!count) throw new Error('压缩包是空的');
+    if (count > MAX_ENTRIES) throw new Error('压缩包里的文件太多（' + count + ' 个），请先自己整理一下');
+    var p = u32(buf, eocd + 16), out = [], k;
+    for (k = 0; k < count; k++) {
+      if (p + 46 > buf.length || u32(buf, p) !== 0x02014b50) break;
+      var flags = u16(buf, p + 8);
+      var method = u16(buf, p + 10);
+      var csize = u32(buf, p + 20);
+      var usize = u32(buf, p + 24);
+      var nlen = u16(buf, p + 28);
+      var elen = u16(buf, p + 30);
+      var clen = u16(buf, p + 32);
+      var lho = u32(buf, p + 42);
+      var name = decodeName(buf.subarray(p + 46, p + 46 + nlen), flags);
+      p += 46 + nlen + elen + clen;
+      if (!name || name.charAt(name.length - 1) === '/') continue;
+      if (!isImageName(name)) continue;
+      if (flags & 1) throw new Error('压缩包设了密码，请自己解压之后再选图片');
+      if (csize === 0xffffffff || usize === 0xffffffff) throw new Error('压缩包超过 4GB，请分开打包');
+      if (lho + 30 > buf.length || u32(buf, lho) !== 0x04034b50) continue;
+      var start = lho + 30 + u16(buf, lho + 26) + u16(buf, lho + 28);
+      if (start + csize > buf.length) throw new Error('压缩包损坏，数据不完整');
+      var raw = buf.subarray(start, start + csize);
+      var bytes = null;
+      try {
+        if (method === 0) bytes = raw;
+        else if (method === 8) bytes = new Uint8Array(await inflateRaw(raw));
+      } catch (e) { bytes = null; }
+      if (bytes && bytes.length) out.push({ name: baseName(name), bytes: bytes });
+    }
+    return out;
+  }
+  return { read: read, isZip: isZip, isImageName: isImageName };
+})();
+
+</script>
+<script>
 (function () {
   'use strict';
   var els = {}, items = [], autoId = 1;
@@ -787,11 +873,25 @@ var ZipWriter = (function () {
     a.click();
     setTimeout(function () { URL.revokeObjectURL(url); if (a.parentNode) a.parentNode.removeChild(a); }, 8000);
   }
-  function addFiles(list) {
+  var zipQueue = [], zipBusy = false, zipOpen = 0;
+  function mimeOf(name) {
+    var e = String(name).split('.').pop().toLowerCase();
+    if (e === 'png') return 'image/png';
+    if (e === 'jpg' || e === 'jpeg') return 'image/jpeg';
+    if (e === 'webp') return 'image/webp';
+    if (e === 'gif') return 'image/gif';
+    if (e === 'bmp') return 'image/bmp';
+    return '';
+  }
+  function isZipFile(f) {
+    return typeof Unzip !== 'undefined' && Unzip.isZip(f);
+  }
+  function pushFiles(list) {
     var n = 0;
     for (var i = 0; i < list.length; i++) {
       var f = list[i];
       if (!f) continue;
+      if (isZipFile(f)) { zipQueue.push(f); continue; }
       if (els.keepw.checked && !isImage(f)) continue;
       items.push({
         id: autoId++, file: f, name: f.name || ('image_' + autoId + '.bin'),
@@ -799,7 +899,37 @@ var ZipWriter = (function () {
       });
       n++;
     }
+    return n;
+  }
+  function drainZips() {
+    if (zipBusy) return;
+    zipBusy = true;
+    (function step() {
+      var f = zipQueue.shift();
+      if (!f) { zipBusy = false; return; }
+      zipOpen++;
+      if (zipOpen > 8) { zipQueue.length = 0; zipBusy = false; zipOpen = 0; setStat('压缩包套得太深，请先自己解压一遍'); return; }
+      setStat('正在解开 ' + f.name + ' …');
+      Unzip.read(f).then(function (ents) {
+        zipOpen--;
+        if (!ents.length) { setStat(f.name + ' 里没有找到图片'); return step(); }
+        var files = [], i;
+        for (i = 0; i < ents.length; i++) files.push(new File([ents[i].bytes], ents[i].name, { type: mimeOf(ents[i].name) }));
+        var n = pushFiles(files);
+        if (n) renderList();
+        setStat('从 ' + f.name + ' 里取出 ' + (n || ents.length) + ' 张图片');
+        step();
+      }, function (err) {
+        zipOpen--;
+        setStat('压缩包打不开：' + (err && err.message ? err.message : err));
+        step();
+      });
+    })();
+  }
+  function addFiles(list) {
+    var n = pushFiles(list);
     if (n) { renderList(); setStat(); }
+    if (zipQueue.length) { drainZips(); return n + 1; }
     return n;
   }
   var dirHandle = null, dirNo = false, dirPend = null;
@@ -1152,7 +1282,10 @@ var ZipWriter = (function () {
     els.start = $('start'); els.zipbtn = $('zipbtn'); els.clear = $('clear');
     els.dlsel = $('dlsel'); els.delsel = $('delsel'); els.pickall = $('pickall');
     els.selinfo = $('selinfo'); els.selline = $('selline');
-    els.subdrop = $('subdrop');
+    els.subdrop = $('subdrop'); els.zipin = $('zipin');
+    if (els.zipin) {
+      els.zipin.onchange = function () { addFiles(els.zipin.files); els.zipin.value = ''; };
+    }
     function algHint() {
       var pix = els.alg.value === '1';
       if (mode !== 'mix') {
@@ -1192,13 +1325,16 @@ var ZipWriter = (function () {
     };
     els.drop.onclick = function () { els.file.click(); };
     els.file.onchange = function () { addFiles(els.file.files); els.file.value = ''; };
-    if ('webkitdirectory' in document.createElement('input')) {
-      els.subdrop.innerHTML = '或把图片 / 文件夹拖到这里 · <u>选文件夹</u>';
-      els.subdrop.querySelector('u').onclick = function (ev) { ev.stopPropagation(); els.dir.click(); };
+    var canDir = 'webkitdirectory' in document.createElement('input');
+    els.subdrop.innerHTML = '或把图片 / 文件夹 / ZIP 拖到这里' +
+      (canDir ? ' · <u>选文件夹</u>' : '') + ' · <u>选 ZIP</u>';
+    var us = els.subdrop.querySelectorAll('u'), uk = 0;
+    if (canDir) {
+      us[uk].onclick = function (ev) { ev.stopPropagation(); els.dir.click(); };
+      uk++;
       els.dir.onchange = function () { addFiles(els.dir.files); els.dir.value = ''; };
-    } else {
-      els.subdrop.textContent = '或把图片拖到这里（手机请点上面选择）';
     }
+    us[uk].onclick = function (ev) { ev.stopPropagation(); els.zipin.click(); };
     document.addEventListener("dragover", function (e) { e.preventDefault(); els.drop.classList.add("over"); });
     document.addEventListener("dragleave", function (e) { if (!e.relatedTarget) els.drop.classList.remove("over"); });
     document.addEventListener("drop", function (e) {

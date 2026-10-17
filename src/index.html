@@ -117,6 +117,7 @@ footer{position:sticky;bottom:0;z-index:20;background:var(--bg);border-top:1px s
   </div>
   <input type="file" id="file" multiple accept="image/*" hidden>
   <input type="file" id="dir" webkitdirectory directory multiple hidden>
+  <input type="file" id="zipin" accept=".zip,application/zip" multiple hidden>
 
   <div class="grid">
     <div class="card"><input type="checkbox" id="flat" checked><label for="flat">透明区域填白<br><span class="hint" style="margin:0">仅「彻底」需要</span></label></div>
@@ -152,6 +153,7 @@ footer{position:sticky;bottom:0;z-index:20;background:var(--bg);border-top:1px s
 <script src="codec.js"></script>
 <script src="codec2.js"></script>
 <script src="zip.js"></script>
+<script src="unzip.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

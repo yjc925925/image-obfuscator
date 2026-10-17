@@ -15,7 +15,7 @@ const expr = `(async function () {
   function chk(n, ok, note) { R.push((ok ? 'PASS  ' : 'FAIL  ') + n + (note ? '  -> ' + note : '')); if (!ok) bad++; }
   chk('线上页面可打开', document.readyState === 'complete', document.readyState);
   chk('标题', document.title === '图片混淆器', document.title);
-  chk('脚本数 5', document.querySelectorAll('script').length === 5, String(document.querySelectorAll('script').length));
+  chk('脚本数 6', document.querySelectorAll('script').length === 6, String(document.querySelectorAll('script').length));
   chk('核心对象就位', typeof Codec === 'object' && typeof HashCore === 'object' && typeof ZipWriter === 'object', typeof Codec + '/' + typeof HashCore + '/' + typeof ZipWriter);
   chk('算法选择器', document.getElementById('alg') && document.getElementById('alg').value === '2', '');
   chk('勾选与一键按钮', !!document.getElementById('pickall') && !!document.getElementById('dlsel') && !!document.getElementById('delsel') && document.getElementById('dlsel').textContent === '一键下载', '');

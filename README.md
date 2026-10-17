@@ -20,7 +20,8 @@ leaves the browser.
    files are byte-identical; pick whichever name you prefer.
 2. Choose **混淆图片** (Mix) or **还原图片** (Restore).
 3. Type a password (may be empty), pick an algorithm (default **标准**).
-4. Drop in images, or pick files, or pick a whole folder.
+4. Drop in images, or pick files, or pick a whole folder. A **.zip** dropped here (or picked
+   via **选 ZIP**) is unpacked in the browser, so nothing needs unzipping on a phone.
 5. Press **开始混淆 / 开始还原**.
 6. Download one by one, or hit **打包 ZIP** to take them all at once (one save dialog instead of
    many — recommended on phones).
@@ -80,6 +81,9 @@ needs a 3615×2033 canvas (1.88× per side). Thorough mode is simply the origina
   restricted zone, not corruption. Files written via **保存到文件夹** avoid the tag; for existing
   files, right-click → Properties → Unblock, or run
   `Get-ChildItem -Recurse -File | Unblock-File`.
+- A **ZIP** dropped on the page (or picked via **选 ZIP**) is unpacked in the browser and the
+  images inside are added automatically. Password-protected archives are not supported; nested
+  folders are flattened and only common image formats are taken.
 - **透明区域填白** only matters for thorough mode, which discards the alpha channel. Standard mode
   preserves the original file untouched, transparency included.
 
@@ -182,7 +186,7 @@ iOS，双击 HTML 用浏览器打开即可，全程不联网、不上传任何�
 2. 选「混淆图片」或「还原图片」
 3. 填密码（可留空）
 4. 选一种算法（默认「标准」，两种算法的区别见下）
-5. 点选择框选图片、把图片或文件夹拖进页面、或点「选文件夹」
+5. 点选择框选图片、把图片或文件夹拖进页面、或点「选文件夹」；也可以把 ZIP 直接拖进页面（或点「选 ZIP」），里面的图片会自动取出来
 6. 点最下面的「开始混淆 / 开始还原」
 7. 结果可以一张一张下载，也可以「打包 ZIP」一次拿走（手机上建议用 ZIP，只弹一次保存框）
 8. 每一行右边有「预览」「下载」「删除」：预览直接看结果（点空白处或按 Esc 关闭），下载拿走
@@ -224,6 +228,7 @@ iOS，双击 HTML 用浏览器打开即可，全程不联网、不上传任何�
   **从本地网页下载**的文件打的「受限站点」标记，不是文件坏了。用「保存到文件夹」保存的结果
   没有这个标记；已经中招的文件，右键 → 属性 → 勾「解除锁定」，或者对文件夹跑一次
   `Get-ChildItem -Recurse -File | Unblock-File`。
+- 直接拖一个 ZIP 进页面（或点「选 ZIP」）也能用：里面的图片会在浏览器里自动取出来，手机上不用自己解压。设了密码的 ZIP 不支持，子文件夹会被摊平，只取常见的图片格式。
 - 「透明区域填白」只在「彻底」算法下有用（它会抹掉透明通道）。「标准」算法保留原始文件，
   透明区域照原样保留。
 
